@@ -31,6 +31,8 @@ Produce a one-file assembly source that, using the jsA8E automation API, preserv
 ## 📌 Notes for Future Execution
 - The agent must assume it has access to the `Spy vs Spy (Title Version).xex` binary for comparison/verification.
 - The goal is to recreate the game in a single assembly source file that a jsA8E pipeline can assemble into a faithful build of the game.
+- During recovery work, temporary segmented source files may be kept in a separate working folder for readability and partial verification, but the final deliverable must always be consolidated into `Spy vs Spy (Title Version).s`.
+- Do not introduce `include` directives or external dependencies into the final source file; segmentation is only a development aid.
 - When disassembly is incomplete, temporary data scaffolding is acceptable, but recovered code should be rewritten as mnemonics as soon as the routine structure is known.
 - When disassembling, add concise comments for Atari 8-bit hardware addresses and Atari-specific routines where it improves readability, especially for Display List access, interrupt vectors, memory-mapped registers, and other common 6502/Atari idioms.
 

@@ -1,0 +1,5 @@
+.ORG $9D6D
+
+XEX_9D6D_252:
+    .BYTE $0C
+

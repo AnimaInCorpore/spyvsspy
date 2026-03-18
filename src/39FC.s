@@ -1,0 +1,5 @@
+.ORG $39FC
+
+XEX_39FC_281:
+    .BYTE $0F, $FD, $DF, $70
+

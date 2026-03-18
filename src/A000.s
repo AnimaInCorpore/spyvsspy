@@ -1,0 +1,65 @@
+.ORG $A000
+
+XEX_A000_337:
+    .BYTE $DD, $DD, $DD, $DD, $DD, $DD, $DD, $DD, $EA, $EA, $EA, $EA, $EA, $EA, $EA, $EA
+    .BYTE $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA
+    .BYTE $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA
+    .BYTE $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA
+    .BYTE $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA
+    .BYTE $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA
+    .BYTE $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA
+    .BYTE $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA
+    .BYTE $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA
+    .BYTE $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA
+    .BYTE $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA
+    .BYTE $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA
+    .BYTE $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA
+    .BYTE $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AB, $AB, $AB, $AB, $AB, $AB, $AB, $AB
+    .BYTE $77, $77, $77, $77, $77, $77, $77, $77, $0F, $0F, $0F, $CF, $F3, $B0, $AC, $AB
+    .BYTE $55, $55, $55, $FF, $FF, $00, $00, $FF, $55, $55, $55, $FF, $FF, $00, $00, $FF
+    .BYTE $55, $55, $55, $F5, $FF, $0F, $00, $F0, $55, $55, $55, $55, $FF, $FF, $00, $00
+    .BYTE $55, $55, $55, $55, $FF, $FF, $00, $00, $55, $55, $55, $55, $F5, $FF, $0F, $00
+    .BYTE $55, $55, $55, $55, $55, $FF, $FF, $00, $55, $55, $55, $55, $55, $FF, $FF, $00
+    .BYTE $70, $70, $70, $70, $70, $F0, $C0, $03, $C3, $C3, $C3, $C3, $CE, $FA, $EA, $AA
+    .BYTE $DD, $DD, $DD, $DD, $DD, $DD, $DD, $DD, $EA, $EA, $EA, $EA, $EA, $FA, $7A, $7A
+    .BYTE $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA
+    .BYTE $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA
+    .BYTE $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA
+    .BYTE $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA
+    .BYTE $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA
+    .BYTE $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA
+    .BYTE $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA
+    .BYTE $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA
+    .BYTE $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA
+    .BYTE $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA
+    .BYTE $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA
+    .BYTE $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA
+    .BYTE $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AB, $AB, $AB, $AB, $AB, $AF, $AD, $AD
+    .BYTE $77, $77, $77, $77, $77, $77, $77, $77, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA
+    .BYTE $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA
+    .BYTE $AF, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $FF, $B0, $BF, $B0, $BF, $B0, $FC, $C3
+    .BYTE $FF, $0E, $CE, $3E, $0E, $CE, $3E, $3A, $F0, $AF, $AA, $AA, $AA, $AA, $AA, $AA
+    .BYTE $00, $FF, $AA, $AA, $AA, $AA, $AA, $AA, $00, $FF, $AA, $AA, $AA, $AA, $AA, $AA
+    .BYTE $0E, $FA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA
+    .BYTE $DD, $DD, $DD, $DD, $DD, $DD, $DD, $DD, $7E, $5F, $5E, $57, $55, $55, $55, $55
+    .BYTE $AA, $AA, $EA, $BB, $EE, $7F, $55, $55, $AA, $AA, $AA, $BA, $EE, $FF, $55, $55
+    .BYTE $AA, $AA, $AA, $AA, $EA, $FF, $55, $55, $AA, $AA, $AA, $AA, $AA, $FF, $55, $55
+    .BYTE $AA, $AA, $AA, $AA, $AA, $FF, $55, $55, $AA, $AA, $AA, $AA, $AA, $FF, $55, $55
+    .BYTE $AA, $AA, $AA, $AA, $AA, $FF, $55, $55, $AA, $AA, $AA, $AA, $AA, $FF, $55, $55
+    .BYTE $AA, $AA, $AA, $AA, $AA, $FF, $55, $55, $AA, $AA, $AA, $AA, $AA, $F7, $77, $77
+    .BYTE $AA, $AA, $AA, $AA, $AA, $FF, $7F, $77, $AA, $AA, $AA, $AA, $AA, $FF, $77, $77
+    .BYTE $AA, $AA, $AA, $AA, $AA, $FF, $77, $77, $AA, $AA, $AA, $AA, $AA, $FF, $57, $DF
+    .BYTE $AA, $AA, $AA, $AA, $AA, $FF, $57, $7F, $AA, $AA, $AA, $AA, $AA, $7F, $75, $75
+    .BYTE $AA, $AA, $AA, $AA, $AA, $FF, $55, $55, $AA, $AA, $AA, $AA, $AA, $FF, $55, $55
+    .BYTE $AA, $AA, $AA, $AA, $AA, $FF, $55, $55, $AA, $AA, $AA, $AA, $AA, $FF, $55, $55
+    .BYTE $AA, $AA, $AA, $AA, $AA, $FF, $55, $55, $AA, $AA, $AA, $AA, $AA, $FF, $55, $55
+    .BYTE $AA, $AA, $AA, $AA, $AA, $FF, $55, $55, $AA, $AA, $AA, $AE, $BB, $FF, $55, $55
+    .BYTE $AA, $AA, $AB, $EE, $BB, $FD, $55, $55, $BD, $F5, $B5, $D5, $55, $55, $55, $55
+    .BYTE $77, $77, $77, $77, $77, $77, $77, $77, $AA, $AA, $AA, $BF, $8C, $8C, $8C, $8C
+    .BYTE $AA, $AA, $AA, $FF, $CC, $CC, $CC, $CC, $AA, $AA, $AA, $FF, $CC, $CC, $C3, $33
+    .BYTE $AB, $AF, $F0, $CC, $C3, $33, $30, $0F, $33, $0C, $CC, $33, $33, $0E, $FA, $AA
+    .BYTE $3A, $EA, $EA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA
+    .BYTE $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA
+    .BYTE $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA
+    .BYTE $AA, $AA, $AA, $AA, $AA, $AA, $AA, $AA
+

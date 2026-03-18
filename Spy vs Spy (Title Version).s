@@ -2,6 +2,10 @@
 ; Partial mnemonic-first disassembly scaffold.
 ; Recovered bootstrap/runtime fragments are represented as code;
 ; opaque tables remain as data until the surrounding routines are finished.
+;
+; jsA8E boot note:
+; this XEX needs PORTB=$FE at reset so OS/BASIC/FP ROMs are hidden while
+; the C290+ segments are loaded into RAM.
 
 ; -----------------------------------------------------------------------------
 ; Bootstrap / loader path
@@ -274,6 +278,73 @@ BootTextAndVectors:
 ; Reset / display tail
 ; -----------------------------------------------------------------------------
 
+.ORG $C471
+
+LoaderBootEntry:
+    LDA $D013
+    ROR A
+    BCC LoaderBootSkipCheck
+    LDA $BFFC
+    BNE LoaderBootSkipCheck
+    LDA $BFFD
+    BPL LoaderBootSkipCheck
+    JMP ($BFFE)
+
+LoaderBootSkipCheck:
+    JSR $C4DA
+    LDA $D301
+    ORA #$02
+    STA $D301
+    LDA $08
+    BEQ LoaderOptionClear
+    LDA $03F8
+    BNE LoaderOptionOnStart
+    BEQ LoaderOptionClear
+
+LoaderOptionClear:
+    LDA $D01F
+    AND #$04
+    BEQ LoaderOptionOnStart
+    LDA $D301
+    AND #$FD
+    STA $D301
+
+LoaderOptionOnStart:
+    LDA #$00
+    TAY
+    STA $05
+    LDA #$28
+    STA $06
+
+LoaderProbeLoop:
+    LDA ($05),Y
+    EOR #$FF
+    STA ($05),Y
+    CMP ($05),Y
+    BNE LoaderProbeDone
+    EOR #$FF
+    STA ($05),Y
+    CMP ($05),Y
+    BNE LoaderProbeDone
+    INC $06
+    BNE LoaderProbeLoop
+
+LoaderProbeDone:
+    RTS
+
+LoaderChecksumStart:
+    LDA #$00
+    TAX
+    CLC
+
+LoaderChecksumLoop:
+    ADC $BFF0,X
+    INX
+    BNE LoaderChecksumLoop
+    CMP $03EB
+    STA $03EB
+    RTS
+
 .ORG $C4DA
 
 ResetDisplayTail:
@@ -378,6 +449,243 @@ BootMenuInit:
 
 BootMenuAbort:
     JMP $C63B
+
+.ORG $C5C9
+
+MenuContinueCopy:
+    LDX #$03
+
+MenuCopyShadow:
+    LDA $0400,X
+    STA $0240,X
+    DEX
+    BPL MenuCopyShadow
+    LDA $0242
+    STA $04
+    LDA $0243
+    STA $05
+    LDA $0404
+    STA $0C
+    LDA $0405
+    STA $0D
+    LDY #$7F
+
+MenuCopyLoop:
+    LDA $0400,Y
+    STA ($04),Y
+    DEY
+    BPL MenuCopyLoop
+    CLC
+    LDA $04
+    ADC #$80
+    STA $04
+    LDA $05
+    ADC #$00
+    STA $05
+    DEC $0241
+    BEQ MenuCopyDone
+    INC $030A
+    JSR $C659
+    BPL MenuCopyLoop
+    JSR $C63E
+    LDA $03EA
+    BNE MenuCopyAbort
+    BEQ MenuCopyResume
+
+MenuCopyDone:
+    LDA $03EA
+    BEQ MenuInitPath
+    JSR $C659
+
+MenuInitPath:
+    JSR $C629
+    BCS MenuCopyAbort
+    JSR $C63B
+    INC $09
+    RTS
+
+MenuCopyResume:
+    LDA $03EA
+    BNE MenuCopyAbort
+    BEQ MenuContinuePath
+
+MenuCopyAbort:
+    RTS
+
+MenuContinuePath:
+    LDA $03EA
+    BEQ MenuContinueGo
+    JSR $C659
+
+MenuContinueGo:
+    JSR $C629
+    BCS MenuCopyAbort
+    JSR $C63B
+    INC $09
+    RTS
+
+MenuFinalize:
+    CLC
+    LDA $0242
+    ADC #$06
+    STA $04
+    LDA $0243
+    ADC #$00
+    STA $05
+    JMP ($0004)
+
+MenuAbortJump:
+    JMP ($000C)
+
+MenuSaveState:
+    LDX #$3D
+    LDY #$C4
+    TXA
+    LDX #$00
+    STA $0344,X
+    TYA
+    STA $0345,X
+    LDA #$09
+    STA $0342,X
+    LDA #$FF
+    STA $0348,X
+    JMP $E456
+
+MenuCheckState:
+    LDA $03EA
+    BEQ MenuCheckDefault
+    JMP $E47A
+
+MenuCheckDefault:
+    LDA #$52
+    STA $0302
+    LDA #$01
+    STA $0301
+    JMP $E453
+
+MenuCheckBank:
+    LDA $08
+    BEQ MenuCheckStart
+    LDA $09
+    AND #$02
+    BEQ MenuCheckReset
+    JMP $C6A0
+
+MenuCheckStart:
+    LDA $03E9
+    BEQ MenuCheckReset
+    LDA #$80
+    STA $3E
+    INC $03EA
+    JSR $E47D
+    JSR $C5BB
+    LDA #$00
+    STA $03EA
+    STA $03E9
+    ASL $09
+    LDA $0C
+    STA $02
+    LDA $0D
+    STA $03
+    RTS
+
+MenuCheckReset:
+    JMP ($0002)
+
+MenuSetMode:
+    LDA #$A0
+    STA $0246
+    LDA #$80
+    STA $02D5
+    LDA #$00
+    STA $02D6
+    RTS
+
+MenuModeOne:
+    LDA #$31
+    STA $0300
+    LDA $0246
+    LDX $0302
+    CPX #$21
+    BEQ MenuModeOneDone
+    LDA #$07
+
+MenuModeOneDone:
+    STA $0306
+    LDX #$40
+    LDA $0302
+    CMP #$50
+    BEQ MenuModeOneAlt
+    CMP #$57
+    BNE MenuModeOneSkip
+
+MenuModeOneAlt:
+    LDX #$80
+
+MenuModeOneSkip:
+    CMP #$53
+    BNE MenuModeOneTail
+    LDA #$EA
+    STA $0304
+    LDA #$02
+    STA $0305
+    LDY #$04
+    LDA #$00
+    BEQ MenuModeOneStore
+
+MenuModeOneTail:
+    LDY $02D5
+    LDA $02D6
+
+MenuModeOneStore:
+    STX $0303
+    STY $0308
+    STA $0309
+    JSR $E459
+    BPL MenuModeOneExit
+    RTS
+
+MenuModeOneExit:
+    LDA $0302
+    CMP #$53
+    BNE MenuModeOneName
+    JSR $C73A
+    LDY #$02
+    LDA ($15),Y
+    STA $0246
+
+MenuModeOneName:
+    LDA $0302
+    CMP #$21
+    BNE MenuModeOnePlayer
+    JSR $C73A
+    LDY #$FE
+    INY
+    INY
+    LDA ($15),Y
+    CMP #$FF
+    BNE MenuModeOneName
+    INY
+    LDA ($15),Y
+    INY
+    CMP #$FF
+    BNE MenuModeOneName
+    DEY
+    DEY
+    STY $0308
+    LDA #$00
+    STA $0309
+
+MenuModeOnePlayer:
+    LDY $0303
+    RTS
+
+MenuModeOnePtr:
+    LDA $0304
+    STA $15
+    LDA $0305
+    STA $16
+    RTS
 
 ; Remaining code blocks in the $C5xx-$FFD6 runtime chain are still pending.
 
@@ -3171,7 +3479,7 @@ XEX_022F_002:
 .ORG $7F00
 
 XEX_7F00_003:
-    .BYTE $80, $20, $AD, $00, $7F, $8D, $10, $7F, $AC, $01, $7F, $A2, $00, $8A, $9D, $00
+    .BYTE $A3, $16, $AD, $00, $7F, $8D, $10, $7F, $AC, $01, $7F, $A2, $00, $8A, $9D, $00
     .BYTE $00, $E8, $D0, $FA, $EE, $10, $7F, $88, $D0, $F4, $60
 
 .ORG $02E2
@@ -7153,3 +7461,117 @@ XEX_B900_354:
     .BYTE $FF, $8D, $01, $D3, $A9, $C0, $8D, $0E, $D4, $98, $60, $AC, $09, $D2, $10, $06
     .BYTE $C0, $FF, $F0, $02, $38, $60, $18, $60, $41, $41, $01
 
+; -----------------------------------------------------------------------------
+; Recovered runtime entry stubs
+; -----------------------------------------------------------------------------
+
+.ORG $E40C
+
+TopBankDispatch:
+    .BYTE $4C, $6E, $EF, $00, $8D, $EF, $2D, $F2, $7F, $F1, $A3, $F1, $1D, $F2, $AE, $F9
+    .BYTE $4C, $6E, $EF, $00, $1D, $F2, $1D, $F2, $FC, $F2, $2C, $F2, $1D, $F2, $2C, $F2
+    .BYTE $4C, $6E, $EF, $00, $C1, $FE, $06, $FF, $C0, $FE, $CA, $FE, $A2, $FE, $C0, $FE
+    .BYTE $4C, $99, $FE, $00, $E5, $FC, $CE, $FD, $79, $FD, $B3, $FD, $CB, $FD, $E4, $FC
+    .BYTE $4C, $DB, $FC, $00, $4C, $A3, $C6, $4C, $B3, $C6, $4C, $DF, $E4, $4C, $33, $C9
+    .BYTE $4C, $72, $C2, $4C, $E2, $C0, $4C, $8A, $C2, $4C, $5C, $E9, $4C, $17, $EC, $4C
+    .BYTE $0C, $C0, $4C, $C1, $E4, $4C, $23, $F2, $4C, $90, $C2, $4C, $C8, $C2, $4C, $8D
+    .BYTE $FD, $4C, $F7, $FC, $4C, $23, $F2, $4C, $00, $50, $4C, $BC, $EE, $4C, $15, $E9
+    .BYTE $4C, $98, $E8, $90, $C9, $95, $C9, $9A, $C9, $9F, $C9, $A4, $C9, $A9, $C9, $4C
+
+.ORG $C90C
+
+TitleRuntimeEntry:
+    LDA #$01
+    STA $0248
+    LDA $0248
+    STA $D1FF
+    LDA $D803
+    CMP #$80
+    BNE TitleRuntimeExit
+    LDA $D80B
+    CMP #$91
+    BNE TitleRuntimeExit
+    JSR $D819
+TitleRuntimeExit:
+    ASL $0248
+    BNE TitleRuntimeEntryContinue
+    LDA #$00
+    STA $D1FF
+    RTS
+
+TitleRuntimeEntryContinue:
+    RTS
+
+.ORG $E739
+
+TitleMenuFlow:
+    .BYTE $A5, $08, $F0, $25, $A9, $E9, $85, $4A, $A9, $03, $85, $4B, $A0, $12, $18, $B1
+    .BYTE $4A, $AA, $C8, $71, $4A, $F0, $26, $B1, $4A, $85, $4B, $86, $4A, $20, $56, $CB
+    .BYTE $D0, $1B, $20, $94, $E8, $B0, $16, $90, $E3, $A9, $00, $8D, $FB, $03, $8D, $FC
+    .BYTE $03, $A9, $4F, $D0, $2D, $A9, $00, $A8, $20, $BE, $E7, $10, $01, $60, $18, $AD
+    .BYTE $E7, $02, $6D, $EA, $02, $8D, $12, $03, $AD, $E8, $02, $6D, $EB, $02, $8D, $13
+    .BYTE $03, $38, $AD, $E5, $02, $ED, $12, $03, $AD, $E6, $02, $ED, $13, $03, $B0, $09
+    .BYTE $A9, $4E, $A8, $20, $BE, $E7, $4C, $6E, $E7, $AD, $EC, $02, $AE, $E7, $02, $8E
+    .BYTE $EC, $02, $AE, $E8, $02, $8E, $ED, $02, $20, $DE, $E7, $30, $E3, $38, $20, $9E
+    .BYTE $E8, $B0, $DD, $90, $B0, $48, $A2, $09, $BD, $D4, $E7, $9D, $00, $03, $CA, $10
+    .BYTE $F7, $8C, $0B, $03, $68, $8D, $0A, $03, $4C, $59, $E4, $4F, $01, $40, $40, $EA
+    .BYTE $02, $1E, $00, $04, $00, $8D, $13, $03, $A2, $00, $8E, $12, $03, $CA, $8E, $15
+    .BYTE $03, $AD, $EC, $02, $6A, $90, $08, $EE, $EC, $02, $D0, $03, $EE, $ED, $02, $AD
+    .BYTE $EC, $02, $8D, $D1, $02, $AD, $ED, $02, $8D, $D2, $02, $A9, $16, $8D, $CF, $02
+    .BYTE $A9, $E8, $8D, $D0, $02, $A9, $80, $8D, $D3, $02, $4C, $45, $C7, $AE, $15, $03
+    .BYTE $E8, $8E, $15, $03, $F0, $08, $AE, $15, $03, $BD, $7D, $03, $18, $60, $A9, $80
+    .BYTE $8D, $15, $03, $20, $33, $E8, $10, $EE, $38, $60, $A2, $0B, $BD, $51, $E8, $9D
+    .BYTE $00, $03, $CA, $10, $F7, $AE, $12, $03, $8E, $0A, $03, $E8, $8E, $12, $03, $AD
+    .BYTE $13, $03, $8D, $00, $03, $4C, $59, $E4, $00, $01, $26, $40, $FD, $03, $1E, $00
+    .BYTE $80, $00, $00, $00, $8C, $12, $03, $8D, $13, $03, $A9, $E9, $85, $4A, $A9, $03
+    .BYTE $85, $4B, $A0, $12, $B1, $4A, $AA, $C8, $B1, $4A, $CD, $13, $03, $D0, $07, $EC
+    .BYTE $12, $03, $D0, $02, $18, $60, $C9, $00, $D0, $06, $E0, $00, $D0, $02, $38, $60
+    .BYTE $86, $4A, $85, $4B, $20, $56, $CB, $D0, $F5, $F0, $D7, $38, $08, $B0, $28, $8D
+    .BYTE $ED, $02, $8C, $EC, $02, $08, $A9, $00, $A8, $20, $5D, $E8, $B0, $27, $A0, $12
+    .BYTE $AD, $EC, $02, $91, $4A, $AA, $C8, $AD, $ED, $02, $91, $4A, $86, $4A, $85, $4B
+    .BYTE $A9, $00, $91, $4A, $88, $91, $4A, $20, $00, $E9, $90, $0C, $AD, $ED, $02, $AC
+    .BYTE $EC, $02, $20, $15, $E9, $28, $38, $60, $28, $B0, $09, $A9, $00, $A0, $10, $91
+    .BYTE $4A, $C8, $91, $4A, $18, $A0, $10, $AD, $E7, $02, $71, $4A, $8D, $E7, $02, $C8
+    .BYTE $AD, $E8, $02, $71, $4A, $8D, $E8, $02, $A0, $0F, $A9, $00, $91, $4A, $20, $56
+    .BYTE $CB, $A0, $0F, $91, $4A, $18, $60, $18, $A5, $4A, $69, $0C, $8D, $12, $03, $A5
+    .BYTE $4B, $69, $00, $8D, $13, $03, $6C, $12, $03, $4C, $72, $C2, $20, $5D, $E8, $B0
+    .BYTE $3B, $A8, $A5, $4A, $48, $A5, $4B, $48, $86, $4A, $84, $4B, $AD, $44, $02, $D0
+    .BYTE $0F, $A0, $10, $18, $B1, $4A, $C8, $71, $4A, $D0, $1F, $20, $56, $CB, $D0, $1A
+
+.ORG $E4DF
+
+TitleHelperChain:
+    .BYTE $85, $2F, $86, $2E, $8A, $29, $0F, $D0, $04, $E0, $80, $90, $05, $A0, $86, $4C
+    .BYTE $70, $E6, $A0, $00, $BD, $40, $03, $99, $20, $00, $E8, $C8, $C0, $0C, $90, $F4
+    .BYTE $A5, $20, $C9, $7F, $D0, $15, $A5, $22, $C9, $0C, $F0, $71, $AD, $E9, $02, $D0
+    .BYTE $05, $A0, $82, $4C, $70, $E6, $20, $29, $CA, $30, $F8, $A0, $84, $A5, $22, $C9
+    .BYTE $03, $90, $25, $A8, $C0, $0E, $90, $02, $A0, $0E, $84, $17, $B9, $2A, $E7, $F0
+    .BYTE $0F, $C9, $02, $F0, $48, $C9, $08, $B0, $5F, $C9, $04, $F0, $76, $4C, $1E, $E6
+    .BYTE $A5, $20, $C9, $FF, $F0, $05, $A0, $81, $4C, $70, $E6, $AD, $E9, $02, $D0, $27
+    .BYTE $20, $FF, $E6, $B0, $22, $A9, $00, $8D, $EA, $02, $8D, $EB, $02, $20, $95, $E6
+    .BYTE $B0, $E6, $20, $EA, $E6, $A9, $0B, $85, $17, $20, $95, $E6, $A5, $2C, $85, $26
+    .BYTE $A5, $2D, $85, $27, $4C, $72, $E6, $20, $F9, $EE, $4C, $70, $E6, $A0, $01, $84
+    .BYTE $23, $20, $95, $E6, $B0, $03, $20, $EA, $E6, $A9, $FF, $85, $20, $A9, $E4, $85
+    .BYTE $27, $A9, $DB, $85, $26, $4C, $72, $E6, $A5, $20, $C9, $FF, $D0, $05, $20, $FF
+    .BYTE $E6, $B0, $A5, $20, $95, $E6, $20, $EA, $E6, $A6, $2E, $BD, $40, $03, $85, $20
+    .BYTE $4C, $72, $E6, $A5, $22, $25, $2A, $D0, $05, $A0, $83, $4C, $70, $E6, $20, $95
+    .BYTE $E6, $B0, $F8, $A5, $28, $05, $29, $D0, $08, $20, $EA, $E6, $85, $2F, $4C, $72
+    .BYTE $E6, $20, $EA, $E6, $85, $2F, $30, $41, $A0, $00, $91, $24, $20, $D1, $E6, $A5
+    .BYTE $22, $29, $02, $D0, $0C, $A5, $2F, $C9, $9B, $D0, $06, $20, $BB, $E6, $4C, $18
+    .BYTE $E6, $20, $BB, $E6, $D0, $DB, $A5, $22, $29, $02, $D0, $1D, $20, $EA, $E6, $85
+    .BYTE $00, $03, $CA, $10, $F7, $AE, $12, $03, $8E, $0A, $03, $E8, $8E, $12, $03, $AD
+    .BYTE $13, $03, $8D, $00, $03, $4C, $59, $E4, $00, $01, $26, $40, $FD, $03, $1E, $00
+    .BYTE $80, $00, $00, $00, $8C, $12, $03, $8D, $13, $03, $A9, $E9, $85, $4A, $A9, $03
+    .BYTE $85, $4B, $A0, $12, $B1, $4A, $AA, $C8, $B1, $4A, $CD, $13, $03, $D0, $07, $EC
+    .BYTE $12, $03, $D0, $02, $18, $60, $C9, $00, $D0, $06, $E0, $00, $D0, $02, $38, $60
+    .BYTE $86, $4A, $85, $4B, $20, $56, $CB, $D0, $F5, $F0, $D7, $38, $08, $B0, $28, $8D
+    .BYTE $ED, $02, $8C, $EC, $02, $08, $A9, $00, $A8, $20, $5D, $E8, $B0, $27, $A0, $12
+    .BYTE $AD, $EC, $02, $91, $4A, $AA, $C8, $AD, $ED, $02, $91, $4A, $86, $4A, $85, $4B
+    .BYTE $A9, $00, $91, $4A, $88, $91, $4A, $20, $00, $E9, $90, $0C, $AD, $ED, $02, $AC
+    .BYTE $EC, $02, $20, $15, $E9, $28, $38, $60, $28, $B0, $09, $A9, $00, $A0, $10, $91
+    .BYTE $4A, $C8, $91, $4A, $18, $A0, $10, $AD, $E7, $02, $71, $4A, $8D, $E7, $02, $C8
+    .BYTE $AD, $E8, $02, $71, $4A, $8D, $E8, $02, $A0, $0F, $A9, $00, $91, $4A, $20, $56
+    .BYTE $CB, $A0, $0F, $91, $4A, $18, $60, $18, $A5, $4A, $69, $0C, $8D, $12, $03, $A5
+    .BYTE $4B, $69, $00, $8D, $13, $03, $6C, $12, $03, $4C, $72, $C2, $20, $5D, $E8, $B0
+    .BYTE $3B, $A8, $A5, $4A, $48, $A5, $4B, $48, $86, $4A, $84, $4B, $AD, $44, $02, $D0
+    .BYTE $0F, $A0, $10, $18, $B1, $4A, $C8, $71, $4A, $D0, $1F, $20, $56, $CB, $D0, $1A

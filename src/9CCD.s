@@ -1,0 +1,5 @@
+.ORG $9CCD
+
+XEX_9CCD_240:
+    .BYTE $0C
+

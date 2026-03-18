@@ -3,6 +3,7 @@
 Goal: produce a single-file disassembled source that can run in jsA8E and behave like `Spy vs Spy (Title Version).xex`.
 Target source file: `Spy vs Spy (Title Version).s`.
 Exact byte-for-byte XEX identity is no longer the target during active disassembly; recovered code/data structure and behavior take priority.
+Current jsA8E boot requirement: reset with `portB=0xFE` so OS/BASIC/FP ROMs are hidden before the C290+ segments load.
 
 Rules:
 - Do not modify any git submodule contents.

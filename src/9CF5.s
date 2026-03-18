@@ -1,0 +1,5 @@
+.ORG $9CF5
+
+XEX_9CF5_244:
+    .BYTE $0C
+

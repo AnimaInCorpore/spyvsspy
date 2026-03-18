@@ -1,0 +1,5 @@
+.ORG $9CE0
+
+XEX_9CE0_242:
+    .BYTE $3F
+

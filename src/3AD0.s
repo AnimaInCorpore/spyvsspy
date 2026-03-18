@@ -1,0 +1,5 @@
+.ORG $3AD0
+
+XEX_3AD0_285:
+    .BYTE $FC
+
