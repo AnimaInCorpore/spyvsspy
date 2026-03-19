@@ -1,5 +1,3 @@
-.ORG $D400
-    .BYTE $00
 ; Spy vs Spy (Title Version)
 ; Partial mnemonic-first disassembly scaffold.
 ; Recovered bootstrap/runtime fragments are represented as code;
@@ -7596,3 +7594,5 @@ TitleHelperChain:
     .BYTE $4B, $69, $00, $8D, $13, $03, $6C, $12, $03, $4C, $72, $C2, $20, $5D, $E8, $B0
     .BYTE $3B, $A8, $A5, $4A, $48, $A5, $4B, $48, $86, $4A, $84, $4B, $AD, $44, $02, $D0
     .BYTE $0F, $A0, $10, $18, $B1, $4A, $C8, $71, $4A, $D0, $1F, $20, $56, $CB, $D0, $1A
+.ORG $02E0
+.WORD $B900
