@@ -1,3 +1,5 @@
+.ORG $D400
+    .BYTE $00
 ; Spy vs Spy (Title Version)
 ; Partial mnemonic-first disassembly scaffold.
 ; Recovered bootstrap/runtime fragments are represented as code;
@@ -3479,7 +3481,7 @@ XEX_022F_002:
 .ORG $7F00
 
 XEX_7F00_003:
-    .BYTE $A3, $16
+    .BYTE $80, $20
     .BYTE $AD, $00, $7F, $8D, $10, $7F, $AC, $01, $7F, $A2, $00, $8A, $9D, $00
     .BYTE $00, $E8, $D0, $FA, $EE, $10, $7F, $88, $D0, $F4, $60
 
@@ -5071,6 +5073,12 @@ XEX_9F50_265:
     .BYTE $C8, $02, $A9, $50, $8D, $00, $02, $A9, $9F, $8D, $01, $02, $A9, $C0, $8D, $0E
     .BYTE $D4, $58, $A9, $22, $8D, $2F, $02, $A5, $14, $C5, $14, $F0, $FC, $60
 
+.ORG $02E2
+.WORD $9F93
+.ORG $7F00
+.BYTE $34, $1D
+.ORG $02E2
+.WORD $7F02
 .ORG $2000
 
 XEX_2000_266:
@@ -5405,6 +5413,8 @@ XEX_2000_266:
     .BYTE $02, $91, $00, $88, $10, $F9, $18, $A9, $80, $65, $00, $85, $00, $90, $02, $E6
     .BYTE $01, $18, $A9, $80, $65, $02, $85, $02, $90, $02, $E6, $03, $60
 
+.ORG $02E2
+.WORD $2000
 .ORG $34A6
 
 XEX_34A6_267:
@@ -5927,6 +5937,10 @@ XEX_4F36_289:
 XEX_5030_290:
     .BYTE $21, $7F, $AA, $C2, $94, $FF
 
+.ORG $7F00
+.BYTE $47, $37
+.ORG $02E2
+.WORD $7F02
 .ORG $47EB
 
 XEX_47EB_291:
@@ -6988,6 +7002,10 @@ XEX_7E00_336:
     .BYTE $77, $77, $77, $77, $77, $77, $77, $77, $00, $03, $0D, $3F, $D5, $57, $5D, $75
     .BYTE $00, $FF, $55, $FF, $55, $D5, $75, $FD, $00, $FC, $57, $D5, $75, $5D, $5D, $5D
 
+.ORG $7F00
+.BYTE $A3, $16
+.ORG $02E2
+.WORD $7F02
 .ORG $A000
 
 XEX_A000_337:
@@ -7466,6 +7484,8 @@ XEX_B900_354:
 ; Recovered runtime entry stubs
 ; -----------------------------------------------------------------------------
 
+.ORG $02E2
+.WORD $B900
 .ORG $E40C
 
 TopBankDispatch:

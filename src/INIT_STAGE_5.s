@@ -1,0 +1,4 @@
+.ORG $7F00
+.BYTE $A3, $16
+.ORG $02E2
+.WORD $7F02

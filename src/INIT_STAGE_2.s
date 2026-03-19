@@ -1,0 +1,4 @@
+.ORG $7F00
+.BYTE $34, $1D
+.ORG $02E2
+.WORD $7F02
