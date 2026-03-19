@@ -1,28 +1,16 @@
 "use strict";
 
-const fs = require("node:fs");
-const path = require("node:path");
-const { createHeadlessAutomation } = require("./A8E/jsA8E/headless");
-
-function hex(n, w) { return "$" + n.toString(16).toUpperCase().padStart(w || 4, "0"); }
+const { assembleSource, hex, runBuild, withSpyAutomation } = require("./automation");
 
 async function main() {
-  const runtime = await createHeadlessAutomation({
-    cwd: __dirname,
-    roms: { os: path.resolve(__dirname, "ATARIXL.ROM"), basic: path.resolve(__dirname, "ATARIBAS.ROM") },
-    turbo: true, frameDelayMs: 0, optionOnStart: true,
-  });
-
-  try {
-    const api = runtime.api;
-    const source = fs.readFileSync(path.resolve(__dirname, "Spy vs Spy (Title Version).s"), "utf8");
-    const build = await api.dev.assembleSource({ name: "Spy vs Spy (Title Version).s", text: source });
+  await withSpyAutomation({ optionOnStart: true }, async (api) => {
+    const build = await assembleSource(api);
     if (!build.ok) throw new Error("Assembly failed");
 
     // Set breakpoint at RUNAD $C290
     await api.debug.setBreakpoints([0xC290]);
 
-    await api.dev.runXex({ build, resetOptions: { portB: 0xfe }, awaitEntry: false });
+    await runBuild(api, build, { resetOptions: { portB: 0xfe }, awaitEntry: false });
 
     console.log("Waiting for breakpoint at $C290 (RUNAD)...");
     const stop = await api.debug.waitForBreakpoint({ timeoutMs: 15000 });
@@ -48,10 +36,7 @@ async function main() {
     const dis = await api.debug.disassemble({ pc: 0xC290, count: 10 });
     console.log("\nCode at $C290:");
     dis.instructions.forEach(i => console.log(`  ${hex(i.address)}: ${i.text}`));
-
-  } finally {
-    await runtime.dispose();
-  }
+  });
 }
 
-main().catch(err => { console.error(err && err.stack ? err.stack : String(err)); process.exitCode = 1; });
+main().catch((err) => { console.error(err && err.stack ? err.stack : String(err)); process.exitCode = 1; });

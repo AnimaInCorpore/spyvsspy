@@ -1,76 +1,66 @@
 "use strict";
 
-const fs = require("node:fs");
-const path = require("node:path");
-const { createHeadlessAutomation } = require("./A8E/jsA8E/headless");
+const { buildBytes, hex, readBytes, readText, withSpyAutomation } = require("./automation");
 
-function hex(n, w) { return "$" + n.toString(16).toUpperCase().padStart(w || 4, "0"); }
-
-const playgroundDir = path.resolve(__dirname, "playground");
-fs.mkdirSync(playgroundDir, { recursive: true });
-
-async function runAndCapture(label, launchFn, outPath) {
-  const runtime = await createHeadlessAutomation({
-    cwd: __dirname,
-    roms: {
-      os: path.resolve(__dirname, "ATARIXL.ROM"),
-      basic: path.resolve(__dirname, "ATARIBAS.ROM"),
-    },
-    turbo: true,
-    frameDelayMs: 0,
-    optionOnStart: true,
-  });
-
-  try {
-    const api = runtime.api;
-    await launchFn(api);
-
-    console.log(`[${label}] Waiting 30s (real) for title screen...`);
-    await api.system.waitForTime({ ms: 30000, clock: "real" });
-
-    const dbg = (await api.getSystemState()).debugState;
-    const sdlistLo = await api.debug.readMemory(0x0230);
-    const sdlistHi = await api.debug.readMemory(0x0231);
-    const sdlist = sdlistLo | (sdlistHi << 8);
-    const portb = await api.debug.readMemory(0xD301);
-    const dmactl = await api.debug.readMemory(0xD400);
-    const colbk = await api.debug.readMemory(0xD01A);
-    console.log(`[${label}] PC=${hex(dbg.pc)} PORTB=${hex(portb,2)} DMACTL=${hex(dmactl,2)} SDLIST=${hex(sdlist)} COLBK=${hex(colbk,2)} instrs=${dbg.instructionCounter}`);
-
-    // Show first 16 bytes of display list
-    const dl = await api.debug.readRange(sdlist, 16);
-    console.log(`[${label}] DL: ${Array.from(dl).map(b => hex(b,2)).join(" ")}`);
-
-    // Disassemble around PC
-    const dis = await api.debug.disassemble({ pc: dbg.pc, count: 5 });
-    console.log(`[${label}] Disasm: ${dis.instructions.map(i => `${hex(i.address)}:${i.text}`).join("  ")}`);
-
-    const shot = await api.artifacts.captureScreenshot({ encoding: "bytes" });
-    fs.writeFileSync(outPath, Buffer.from(shot.bytes));
-    console.log(`[${label}] Screenshot saved: ${path.basename(outPath)} (${shot.width}x${shot.height})`);
-  } finally {
-    await runtime.dispose();
+function parseXex(buf) {
+  const segments = [];
+  let i = 0;
+  if (buf[0] === 0xFF && buf[1] === 0xFF) i = 2;
+  while (i + 3 < buf.length) {
+    const start = buf[i] | (buf[i + 1] << 8);
+    const end = buf[i + 2] | (buf[i + 3] << 8);
+    i += 4;
+    if (start === 0xFFFF) {
+      i -= 2;
+      continue;
+    }
+    const len = end - start + 1;
+    if (len <= 0 || i + len > buf.length) break;
+    segments.push({
+      start: start,
+      end: end,
+      len: len,
+      preview: Array.from(buf.slice(i, i + 8)).map((b) => hex(b, 2)).join(" "),
+    });
+    i += len;
   }
+  return segments;
 }
 
 async function main() {
-  // --- Run 1: original XEX ---
-  await runAndCapture("XEX", async (api) => {
-    const xexPath = path.resolve(__dirname, "Spy vs Spy (Title Version).xex");
-    const xexData = fs.readFileSync(xexPath);
-    console.log("[XEX] Launching original XEX (portB=0xFE, awaitEntry=false)...");
-    await api.dev.runXex({ bytes: xexData, resetOptions: { portB: 0xfe }, awaitEntry: false });
-  }, path.join(playgroundDir, "cmp-xex-30s.png"));
+  const xexBuf = readBytes("Spy vs Spy (Title Version).xex");
+  const xexSegs = parseXex(xexBuf);
+  console.log(`=== Original XEX (${xexBuf.length} bytes, ${xexSegs.length} segments) ===`);
+  xexSegs.forEach((s) => console.log(`  $${hex(s.start)}-$${hex(s.end)} (${s.len} bytes)  [${s.preview}]`));
 
-  // --- Run 2: assembled source ---
-  await runAndCapture("SRC", async (api) => {
-    const source = fs.readFileSync(path.resolve(__dirname, "Spy vs Spy (Title Version).s"), "utf8");
-    console.log("[SRC] Assembling source...");
+  await withSpyAutomation({ optionOnStart: true }, async (api) => {
+    const source = readText("Spy vs Spy (Title Version).s");
     const build = await api.dev.assembleSource({ name: "Spy vs Spy (Title Version).s", text: source });
-    if (!build.ok) { console.error("Assembly failed:", build); throw new Error("assembly failed"); }
-    console.log(`[SRC] Assembly ok — ${build.byteLength} bytes, runAddr=${hex(build.runAddr)}`);
-    await api.dev.runXex({ build, resetOptions: { portB: 0xfe }, awaitEntry: false });
-  }, path.join(playgroundDir, "cmp-src-30s.png"));
+    if (!build.ok) {
+      console.error("Assembly failed:", build);
+      process.exitCode = 1;
+      return;
+    }
+
+    const srcBuf = buildBytes(build);
+    const srcSegs = parseXex(srcBuf);
+    console.log(`\n=== Assembled Source (${srcBuf.length} bytes, ${srcSegs.length} segments) ===`);
+    srcSegs.forEach((s) => console.log(`  $${hex(s.start)}-$${hex(s.end)} (${s.len} bytes)  [${s.preview}]`));
+
+    console.log("\n=== In XEX but NOT in SRC (missing/different start addresses) ===");
+    const srcStarts = new Set(srcSegs.map((s) => s.start));
+    xexSegs
+      .filter((s) => !srcStarts.has(s.start))
+      .forEach((s) => console.log(`  MISSING: $${hex(s.start)}-$${hex(s.end)} (${s.len} bytes)`));
+
+    const xex7f = xexSegs.find((s) => s.start <= 0x7F00 && s.end >= 0x7F00);
+    const src7f = srcSegs.find((s) => s.start <= 0x7F00 && s.end >= 0x7F00);
+    console.log(`\n$7F00 in XEX: ${xex7f ? `$${hex(xex7f.start)}-$${hex(xex7f.end)} [${xex7f.preview}]` : "NOT FOUND"}`);
+    console.log(`$7F00 in SRC: ${src7f ? `$${hex(src7f.start)}-$${hex(src7f.end)} [${src7f.preview}]` : "NOT FOUND"}`);
+  });
 }
 
-main().catch(err => { console.error(err && err.stack ? err.stack : String(err)); process.exitCode = 1; });
+main().catch((err) => {
+  console.error(err && err.stack ? err.stack : String(err));
+  process.exitCode = 1;
+});

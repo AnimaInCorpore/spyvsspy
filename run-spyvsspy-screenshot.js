@@ -1,45 +1,21 @@
 "use strict";
 
-const fs = require("node:fs");
-const path = require("node:path");
-const { createHeadlessAutomation } = require("./A8E/jsA8E/headless");
-
-const playgroundDir = path.resolve(__dirname, "playground");
-fs.mkdirSync(playgroundDir, { recursive: true });
+const { assembleSource, captureScreenshot, hex, runBuild, withSpyAutomation } = require("./automation");
 
 async function main() {
-  const runtime = await createHeadlessAutomation({
-    cwd: __dirname,
-    roms: {
-      os: path.resolve(__dirname, "ATARIXL.ROM"),
-      basic: path.resolve(__dirname, "ATARIBAS.ROM"),
-    },
-    turbo: true,
-    frameDelayMs: 0,
-    optionOnStart: true,
-  });
-
-  try {
-    const api = runtime.api;
-
-    const sourcePath = path.resolve(__dirname, "Spy vs Spy (Title Version).s");
+  await withSpyAutomation({ optionOnStart: true }, async (api) => {
     console.log("Assembling source...");
-    const source = fs.readFileSync(sourcePath, "utf8");
-    const build = await api.dev.assembleSource({
-      name: path.basename(sourcePath),
-      text: source,
-    });
+    const build = await assembleSource(api);
 
     if (!build.ok) {
       console.error("Assembly failed:", build.errors || build);
       process.exitCode = 1;
       return;
     }
-    console.log(`Assembly ok — ${build.byteLength} bytes, runAddr=$${build.runAddr.toString(16).toUpperCase()}`);
+    console.log(`Assembly ok — ${build.byteLength} bytes, runAddr=${hex(build.runAddr)}`);
 
     console.log("Launching XEX (portB=0xFE, awaitEntry=false)...");
-    const result = await api.dev.runXex({
-      build,
+    const result = await runBuild(api, build, {
       resetOptions: { portB: 0xfe },
       awaitEntry: false,
     });
@@ -60,19 +36,14 @@ async function main() {
     });
 
     console.log("Capturing screenshot...");
-    const screenshot = await api.artifacts.captureScreenshot({ encoding: "bytes" });
-
-    const outPath = path.join(playgroundDir, "spyvsspy-source-gameplay-shot.png");
-    fs.writeFileSync(outPath, Buffer.from(screenshot.bytes));
-    console.log(`Screenshot saved to ${outPath} (${screenshot.width}x${screenshot.height})`);
+    const shot = await captureScreenshot(api, "spyvsspy-source-gameplay-shot.png");
+    console.log(`Screenshot saved to ${shot.path} (${shot.width}x${shot.height})`);
 
     if (state.debugState && state.debugState.fault) {
       console.error("Emulation fault detected:", state.debugState.fault);
       process.exitCode = 1;
     }
-  } finally {
-    await runtime.dispose();
-  }
+  });
 }
 
 main().catch((err) => {

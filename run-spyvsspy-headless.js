@@ -1,27 +1,13 @@
-const fs = require("node:fs");
-const path = require("node:path");
-const { createHeadlessAutomation } = require("./A8E/jsA8E/headless");
+"use strict";
+
+const { assembleSource, runBuild, withSpyAutomation } = require("./automation");
 
 async function main() {
-  const runtime = await createHeadlessAutomation({
-    cwd: __dirname,
-    roms: {
-      os: path.resolve(__dirname, "ATARIXL.ROM"),
-      basic: path.resolve(__dirname, "ATARIBAS.ROM"),
-    },
-  });
+  await withSpyAutomation({}, async (api) => {
+    const build = await assembleSource(api);
+    if (!build.ok) throw new Error("Assembly failed");
 
-  try {
-    const api = runtime.api;
-    const sourcePath = path.resolve(__dirname, "Spy vs Spy (Title Version).s");
-    const source = fs.readFileSync(sourcePath, "utf8");
-    const build = await api.dev.assembleSource({
-      name: path.basename(sourcePath),
-      text: source,
-    });
-
-    const result = await api.dev.runXex({
-      build,
+    const result = await runBuild(api, build, {
       resetOptions: { portB: 0xfe },
       awaitEntry: false,
     });
@@ -40,9 +26,7 @@ async function main() {
         2,
       ),
     );
-  } finally {
-    await runtime.dispose();
-  }
+  });
 }
 
 main().catch((err) => {

@@ -29,3 +29,4 @@ Goal: produce a single-file disassembled source that can run in jsA8E and behave
 ## Workspace Hygiene
 - `playground/` is the scratch area for screenshots, hex dumps, and snapshot blobs.
 - Automation scripts now write their generated outputs there instead of the repo root.
+- The JS automation entry points now share `automation.js` for runtime setup and file helpers.

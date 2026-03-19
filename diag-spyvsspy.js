@@ -1,44 +1,21 @@
 "use strict";
 
-const fs = require("node:fs");
-const path = require("node:path");
-const { createHeadlessAutomation } = require("./A8E/jsA8E/headless");
-
-function hex(n, w) { return "$" + n.toString(16).toUpperCase().padStart(w || 4, "0"); }
-
-const playgroundDir = path.resolve(__dirname, "playground");
-fs.mkdirSync(playgroundDir, { recursive: true });
+const { assembleSource, captureScreenshot, hex, runBuild, withSpyAutomation } = require("./automation");
 
 async function main() {
-  const runtime = await createHeadlessAutomation({
-    cwd: __dirname,
-    roms: {
-      os: path.resolve(__dirname, "ATARIXL.ROM"),
-      basic: path.resolve(__dirname, "ATARIBAS.ROM"),
-    },
-    turbo: true,
-    frameDelayMs: 0,
-  });
-
-  try {
-    const api = runtime.api;
-
-    const sourcePath = path.resolve(__dirname, "Spy vs Spy (Title Version).s");
-    const source = fs.readFileSync(sourcePath, "utf8");
+  await withSpyAutomation({}, async (api) => {
     console.log("Assembling...");
-    const build = await api.dev.assembleSource({ name: path.basename(sourcePath), text: source });
+    const build = await assembleSource(api);
     if (!build.ok) { console.error("Assembly failed:", build); process.exitCode = 1; return; }
     console.log(`Assembly ok — ${build.byteLength} bytes, runAddr=${hex(build.runAddr)}`);
 
-    // Log XEX segments from build symbols if available
     if (build.segments) {
-      console.log("Segments:", build.segments.map(s => `${hex(s.start)}-${hex(s.end)}`).join(", "));
+      console.log("Segments:", build.segments.map((s) => `${hex(s.start)}-${hex(s.end)}`).join(", "));
     }
 
     console.log("Launching XEX (portB=0xFE, awaitEntry=false)...");
-    await api.dev.runXex({ build, resetOptions: { portB: 0xfe }, awaitEntry: false });
+    await runBuild(api, build, { resetOptions: { portB: 0xfe }, awaitEntry: false });
 
-    // Sample state at 1s, 5s, 10s intervals
     for (const label of ["1s", "5s", "10s", "20s"]) {
       const waitMs = label === "1s" ? 1000 : label === "5s" ? 4000 : label === "10s" ? 5000 : 10000;
       await api.system.waitForTime({ ms: waitMs, clock: "real" });
@@ -56,22 +33,15 @@ async function main() {
       console.log(`  DMACTL=${hex(dmactl,2)}  SDLIST=${hex(sdlist)}  PORTB=${hex(portb,2)}  CONSOL=${hex(consol,2)}`);
       console.log(`  cycles=${dbg.cycleCounter}  instrs=${dbg.instructionCounter}`);
 
-      // Disassemble around current PC
       const dis = await api.debug.disassemble({ pc: dbg.pc, count: 8 });
       console.log("  Disassembly:");
-      dis.instructions.forEach(i => console.log(`    ${hex(i.address)}: ${i.text}`));
+      dis.instructions.forEach((i) => console.log(`    ${hex(i.address)}: ${i.text}`));
     }
 
-    // Take screenshot
     console.log("\nCapturing screenshot...");
-    const shot = await api.artifacts.captureScreenshot({ encoding: "bytes" });
-    const outPath = path.join(playgroundDir, "spyvsspy-diag-shot.png");
-    fs.writeFileSync(outPath, Buffer.from(shot.bytes));
-    console.log(`Screenshot: ${outPath} (${shot.width}x${shot.height})`);
-
-  } finally {
-    await runtime.dispose();
-  }
+    const shot = await captureScreenshot(api, "spyvsspy-diag-shot.png");
+    console.log(`Screenshot: ${shot.path} (${shot.width}x${shot.height})`);
+  });
 }
 
-main().catch(err => { console.error(err && err.stack ? err.stack : String(err)); process.exitCode = 1; });
+main().catch((err) => { console.error(err && err.stack ? err.stack : String(err)); process.exitCode = 1; });
