@@ -31,3 +31,4 @@ Goal: produce a single-file disassembled source that can run in jsA8E and behave
 - Automation scripts now write their generated outputs there instead of the repo root.
 - The JS automation entry points now share `scripts/automation.js` for runtime setup and file helpers.
 - The helper scripts live under `scripts/` for a clearer project structure.
+- Future automation work should preserve this split: `scripts/` for code, `playground/` for generated files, repo root for project sources and docs.

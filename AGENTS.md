@@ -18,3 +18,8 @@ The project aims to replicate `Spy vs Spy (Title Version).xex` as an assembly so
     *   Use the `jsA8E` debugger to trace why the jump to this location occurs.
     *   Compare memory segments between the original XEX and the assembled output (`xex_dump.txt` analysis) to identify missing data slices.
 4.  **Documentation:** Always update `TODO.md` with any findings or changes to the plan before completing your session.
+
+## Workspace Layout
+- Keep automation helpers under `scripts/` and use `scripts/automation.js` for shared runtime setup.
+- Keep generated artifacts, screenshots, and dumps under `playground/`.
+- Do not reintroduce root-level scratch outputs or helper scripts unless a doc update explains why.
