@@ -6,6 +6,9 @@ const { createHeadlessAutomation } = require("./A8E/jsA8E/headless");
 
 function hex(n, w) { return "$" + n.toString(16).toUpperCase().padStart(w || 4, "0"); }
 
+const playgroundDir = path.resolve(__dirname, "playground");
+fs.mkdirSync(playgroundDir, { recursive: true });
+
 async function main() {
   const runtime = await createHeadlessAutomation({
     cwd: __dirname,
@@ -62,7 +65,7 @@ async function main() {
     // Take screenshot
     console.log("\nCapturing screenshot...");
     const shot = await api.artifacts.captureScreenshot({ encoding: "bytes" });
-    const outPath = path.resolve(__dirname, "spyvsspy-diag-shot.png");
+    const outPath = path.join(playgroundDir, "spyvsspy-diag-shot.png");
     fs.writeFileSync(outPath, Buffer.from(shot.bytes));
     console.log(`Screenshot: ${outPath} (${shot.width}x${shot.height})`);
 

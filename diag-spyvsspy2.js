@@ -6,6 +6,9 @@ const { createHeadlessAutomation } = require("./A8E/jsA8E/headless");
 
 function hex(n, w) { return "$" + n.toString(16).toUpperCase().padStart(w || 4, "0"); }
 
+const playgroundDir = path.resolve(__dirname, "playground");
+fs.mkdirSync(playgroundDir, { recursive: true });
+
 async function main() {
   const runtime = await createHeadlessAutomation({
     cwd: __dirname,
@@ -47,7 +50,7 @@ async function main() {
 
     // Screenshot before input
     let shot = await api.artifacts.captureScreenshot({ encoding: "bytes" });
-    fs.writeFileSync(path.resolve(__dirname, "spyvsspy-before-input.png"), Buffer.from(shot.bytes));
+    fs.writeFileSync(path.join(playgroundDir, "spyvsspy-before-input.png"), Buffer.from(shot.bytes));
     console.log("Saved spyvsspy-before-input.png");
 
     // Press START to advance past any title/menu
@@ -56,7 +59,7 @@ async function main() {
 
     await api.system.waitForTime({ ms: 3000, clock: "real" });
     shot = await api.artifacts.captureScreenshot({ encoding: "bytes" });
-    fs.writeFileSync(path.resolve(__dirname, "spyvsspy-after-start.png"), Buffer.from(shot.bytes));
+    fs.writeFileSync(path.join(playgroundDir, "spyvsspy-after-start.png"), Buffer.from(shot.bytes));
     console.log("Saved spyvsspy-after-start.png");
 
     // Try joystick fire button
@@ -67,7 +70,7 @@ async function main() {
     await api.system.waitForTime({ ms: 3000, clock: "real" });
 
     shot = await api.artifacts.captureScreenshot({ encoding: "bytes" });
-    fs.writeFileSync(path.resolve(__dirname, "spyvsspy-after-fire.png"), Buffer.from(shot.bytes));
+    fs.writeFileSync(path.join(playgroundDir, "spyvsspy-after-fire.png"), Buffer.from(shot.bytes));
     console.log("Saved spyvsspy-after-fire.png");
 
     // Final state

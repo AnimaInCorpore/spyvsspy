@@ -6,6 +6,9 @@ const { createHeadlessAutomation } = require("./A8E/jsA8E/headless");
 
 function hex(n, w) { return "$" + n.toString(16).toUpperCase().padStart(w || 4, "0"); }
 
+const playgroundDir = path.resolve(__dirname, "playground");
+fs.mkdirSync(playgroundDir, { recursive: true });
+
 async function runAndCapture(label, launchFn, outPath) {
   const runtime = await createHeadlessAutomation({
     cwd: __dirname,
@@ -57,7 +60,7 @@ async function main() {
     const xexData = fs.readFileSync(xexPath);
     console.log("[XEX] Launching original XEX (portB=0xFE, awaitEntry=false)...");
     await api.dev.runXex({ bytes: xexData, resetOptions: { portB: 0xfe }, awaitEntry: false });
-  }, path.resolve(__dirname, "cmp-xex-30s.png"));
+  }, path.join(playgroundDir, "cmp-xex-30s.png"));
 
   // --- Run 2: assembled source ---
   await runAndCapture("SRC", async (api) => {
@@ -67,7 +70,7 @@ async function main() {
     if (!build.ok) { console.error("Assembly failed:", build); throw new Error("assembly failed"); }
     console.log(`[SRC] Assembly ok — ${build.byteLength} bytes, runAddr=${hex(build.runAddr)}`);
     await api.dev.runXex({ build, resetOptions: { portB: 0xfe }, awaitEntry: false });
-  }, path.resolve(__dirname, "cmp-src-30s.png"));
+  }, path.join(playgroundDir, "cmp-src-30s.png"));
 }
 
 main().catch(err => { console.error(err && err.stack ? err.stack : String(err)); process.exitCode = 1; });

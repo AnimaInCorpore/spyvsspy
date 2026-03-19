@@ -6,6 +6,9 @@ const { createHeadlessAutomation } = require("./A8E/jsA8E/headless");
 
 function hex(n, w) { return "$" + n.toString(16).toUpperCase().padStart(w || 4, "0"); }
 
+const playgroundDir = path.resolve(__dirname, "playground");
+fs.mkdirSync(playgroundDir, { recursive: true });
+
 async function snapshot(label, api) {
   const dbg = (await api.getSystemState()).debugState;
   const sdlistLo = await api.debug.readMemory(0x0230);
@@ -63,7 +66,7 @@ async function main() {
   await run("XEX", async (api) => {
     const xex = fs.readFileSync(path.resolve(__dirname, "Spy vs Spy (Title Version).xex"));
     await api.dev.runXex({ bytes: xex, resetOptions: { portB: 0xfe }, awaitEntry: false });
-  }, path.resolve(__dirname, "cmp-xex-30s.png"));
+  }, path.join(playgroundDir, "cmp-xex-30s.png"));
 
   await run("SRC", async (api) => {
     const source = fs.readFileSync(path.resolve(__dirname, "Spy vs Spy (Title Version).s"), "utf8");
@@ -75,7 +78,7 @@ async function main() {
       build.segments.forEach(s => console.log(`  seg: ${hex(s.start)}-${hex(s.end)} (${s.end - s.start + 1} bytes)`));
     }
     await api.dev.runXex({ build, resetOptions: { portB: 0xfe }, awaitEntry: false });
-  }, path.resolve(__dirname, "cmp-src-30s.png"));
+  }, path.join(playgroundDir, "cmp-src-30s.png"));
 }
 
 main().catch(err => { console.error(err && err.stack ? err.stack : String(err)); process.exitCode = 1; });

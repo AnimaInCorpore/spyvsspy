@@ -25,3 +25,7 @@ Goal: produce a single-file disassembled source that can run in jsA8E and behave
 ## Verification
 - Re-run the game in jsA8E after each major chunk is recovered.
 - Confirm the disassembled source boots and follows the original runtime path.
+
+## Workspace Hygiene
+- `playground/` is the scratch area for screenshots, hex dumps, and snapshot blobs.
+- Automation scripts now write their generated outputs there instead of the repo root.
