@@ -2,9 +2,9 @@
 
 const fs = require("node:fs");
 const path = require("node:path");
-const { createHeadlessAutomation } = require("./A8E/jsA8E/headless");
+const { createHeadlessAutomation } = require("../A8E/jsA8E/headless");
 
-const ROOT_DIR = __dirname;
+const ROOT_DIR = path.resolve(__dirname, "..");
 const PLAYGROUND_DIR = path.resolve(ROOT_DIR, "playground");
 const SOURCE_PATH = path.resolve(ROOT_DIR, "Spy vs Spy (Title Version).s");
 const XEX_PATH = path.resolve(ROOT_DIR, "Spy vs Spy (Title Version).xex");

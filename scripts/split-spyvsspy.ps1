@@ -1,8 +1,13 @@
 param(
-    [string]$SourcePath = (Join-Path $PSScriptRoot 'Spy vs Spy (Title Version).s'),
-    [string]$SourceDir = (Join-Path $PSScriptRoot 'src'),
-    [string]$ManifestPath = (Join-Path $PSScriptRoot 'src\MANIFEST.txt')
+    [string]$RepoRoot = (Split-Path -Parent $PSScriptRoot),
+    [string]$SourcePath,
+    [string]$SourceDir,
+    [string]$ManifestPath
 )
+
+if (-not $SourcePath) { $SourcePath = Join-Path $RepoRoot 'Spy vs Spy (Title Version).s' }
+if (-not $SourceDir) { $SourceDir = Join-Path $RepoRoot 'src' }
+if (-not $ManifestPath) { $ManifestPath = Join-Path $RepoRoot 'src\MANIFEST.txt' }
 
 if (-not (Test-Path -LiteralPath $SourcePath)) {
     throw "Missing root source: $SourcePath"

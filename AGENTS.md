@@ -11,8 +11,8 @@ The project aims to replicate `Spy vs Spy (Title Version).xex` as an assembly so
 ## Handover Instructions for Incoming Agents
 1.  **Check the `TODO.md` file:** It is the canonical source of truth for the project state and the immediate next steps.
 2.  **Verify the environment:**
-    *   Use `.\rebuild-spyvsspy.ps1` to re-assemble.
-    *   Use `node run-spyvsspy-headless.js` or `node diag-spyvsspy2.js` to inspect runtime behavior.
+    *   Use `.\scripts\rebuild-spyvsspy.ps1` to re-assemble.
+    *   Use `node scripts/run-spyvsspy-headless.js` or `node scripts/diag-spyvsspy2.js` to inspect runtime behavior.
 3.  **Investigate the `$3D5F` hang:**
     *   The `PC` points to `$3D5F`, which is currently just `$00` (BRK). 
     *   Use the `jsA8E` debugger to trace why the jump to this location occurs.
