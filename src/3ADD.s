@@ -41,15 +41,80 @@ XEX_3ADD_286:
     .BYTE $20, $E8, $86, $0F, $A6, $13, $CA, $30, $03, $4C, $61, $83, $A5, $0F, $AC, $5C
     .BYTE $57, $91, $20, $AA, $CA, $30, $0A, $BC, $66, $57, $B1, $20, $F0, $08, $CA, $10
     .BYTE $F6, $A6, $0E, $4C, $56, $83, $A6, $0E, $E8, $E4, $11, $B0, $03, $4C, $56, $83
-    .BYTE $A0, $04, $A9, $FF, $99, $30, $03, $88, $10, $FA, $A9, $00, $85, $14, $A2, $00
-    .BYTE $86, $0E, $A0, $04, $A5, $0E, $D9, $30, $03, $F0, $3C, $88, $10, $F8, $20, $F9
-    .BYTE $28, $AC, $5C, $57, $B1, $20, $AA, $CA, $30, $2D, $BC, $5D, $57, $B1, $20, $C9
-    .BYTE $FF, $F0, $21, $BC, $66, $57, $B1, $20, $D0, $1A, $20, $E0, $2E, $29, $1F, $CD
-    .BYTE $61, $03, $B0, $10, $A4, $14, $A5, $0E, $99, $30, $03, $8A, $99, $35, $03, $E6
-    .BYTE $14, $4C, $7E, $84, $CA, $10, $D3, $A5, $14, $C9, $05, $B0, $0A, $A6, $0E, $E8
-    .BYTE $E4, $11, $90, $AC, $4C, $27, $84, $AD, $52, $03, $D0, $0D, $AC, $63, $03, $20
-    .BYTE $04, $29, $AC, $6F, $57, $A9, $FF, $91, $20, $AD, $9D, $B6, $10, $05, $A2, $04
-    .BYTE $20, $C2, $29, $60, $02, $01, $FF, $FF, $FF, $FF, $00, $03, $FF, $FF, $FF, $FF
+; -----------------------------------------------------------------------------
+; Table scan / slot fill routine
+; -----------------------------------------------------------------------------
+XEX_3D5D_289:
+    LDY #$04
+    LDA #$FF
+    STA $0330,Y
+    DEY
+    BPL XEX_3D5D_289
+    LDA #$00
+    STA $14
+    LDX #$00
+XEX_3D6D_289:
+    STX $0E
+    LDY #$04
+XEX_3D71_289:
+    LDA $0E
+    CMP $0330,Y
+    BEQ XEX_3DB4_289
+    DEY
+    BPL XEX_3D71_289
+    JSR $28F9
+    LDY $575C
+    LDA ($20),Y
+    TAX
+    DEX
+XEX_3D87_289:
+    BMI XEX_3DB4_289
+    LDY $575D,X
+    LDA ($20),Y
+    CMP #$FF
+    BEQ XEX_3DB1_289
+    LDY $5766,X
+    LDA ($20),Y
+    BNE XEX_3DB1_289
+    JSR $2EE0
+    AND #$1F
+    CMP $0361
+    BCS XEX_3DB1_289
+    LDY $14
+    LDA $0E
+    STA $0330,Y
+    TXA
+    STA $0335,Y
+    INC $14
+    JMP $847E
+XEX_3DB1_289:
+    DEX
+    BPL XEX_3D87_289
+XEX_3DB4_289:
+    LDA $14
+    CMP #$05
+    BCS XEX_3DC4_289
+    LDX $0E
+    INX
+    CPX $11
+    BCC XEX_3D6D_289
+    JMP $8427
+XEX_3DC4_289:
+    LDA $0352
+    BNE XEX_3DD6_289
+    LDY $0363
+    JSR $2904
+    LDY $576F
+    LDA #$FF
+    STA ($20),Y
+XEX_3DD6_289:
+    LDA $B69D
+    BPL XEX_3DE0_289
+    LDX #$04
+    JSR $29C2
+XEX_3DE0_289:
+    RTS
+    .BYTE $02, $01, $FF, $FF, $FF, $FF, $00, $03, $FF, $FF, $FF, $FF
     .BYTE $04, $00, $FF, $FF, $FF, $FF, $01, $17, $14, $19, $FF, $FF, $09, $02, $05, $0C
     .BYTE $FF, $FF, $06, $FF, $FF, $04, $FF, $FF, $07, $05, $FF, $FF, $FF, $FF, $FF, $06
     .BYTE $FF, $FF, $0D, $FF, $FF, $FF, $FF, $0A, $FF, $FF, $FF, $04, $FF, $FF, $10, $FF
