@@ -1,10 +1,37 @@
 .ORG $E739
 
 TitleMenuFlow:
-    .BYTE $A5, $08, $F0, $25, $A9, $E9, $85, $4A, $A9, $03, $85, $4B, $A0, $12, $18, $B1
-    .BYTE $4A, $AA, $C8, $71, $4A, $F0, $26, $B1, $4A, $85, $4B, $86, $4A, $20, $56, $CB
-    .BYTE $D0, $1B, $20, $94, $E8, $B0, $16, $90, $E3, $A9, $00, $8D, $FB, $03, $8D, $FC
-    .BYTE $03, $A9, $4F, $D0, $2D, $A9, $00, $A8, $20, $BE, $E7, $10, $01, $60, $18, $AD
+    LDA $08
+    BEQ $E762
+    LDA #$E9
+    STA $4A
+    LDA #$03
+    STA $4B
+    LDY #$12
+    CLC
+    LDA ($4A),Y
+    TAX
+    INY
+    ADC ($4A),Y
+    BEQ $E776
+    LDA ($4A),Y
+    STA $4B
+    STX $4A
+    JSR $CB56
+    BNE $E776
+    JSR $E894
+    BCS $E776
+    BCC $E745
+    LDA #$00
+    STA $03FB
+    STA $03FC
+    LDA #$4F
+    BNE $E79B
+    LDA #$00
+    TAY
+    JSR $E7BE
+    BPL $E777
+    RTS
     .BYTE $E7, $02, $6D, $EA, $02, $8D, $12, $03, $AD, $E8, $02, $6D, $EB, $02, $8D, $13
     .BYTE $03, $38, $AD, $E5, $02, $ED, $12, $03, $AD, $E6, $02, $ED, $13, $03, $B0, $09
     .BYTE $A9, $4E, $A8, $20, $BE, $E7, $4C, $6E, $E7, $AD, $EC, $02, $AE, $E7, $02, $8E
@@ -33,4 +60,3 @@ TitleMenuFlow:
     .BYTE $4B, $69, $00, $8D, $13, $03, $6C, $12, $03, $4C, $72, $C2, $20, $5D, $E8, $B0
     .BYTE $3B, $A8, $A5, $4A, $48, $A5, $4B, $48, $86, $4A, $84, $4B, $AD, $44, $02, $D0
     .BYTE $0F, $A0, $10, $18, $B1, $4A, $C8, $71, $4A, $D0, $1F, $20, $56, $CB, $D0, $1A
-

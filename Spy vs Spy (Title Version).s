@@ -1,3546 +1,3 @@
-.ORG $C000
-
-; Hardware interrupt dispatch table / config data ($C000-$C00B)
-C000_Data:
-    .BYTE $11, $92, $10, $05, $83, $00, $42, $42, $00, $00, $01, $02
-
-; Subroutine: enable ANTIC DMA, capture VCOUNT to $03FA
-C00C_InitDma:
-    LDA #$40
-    STA $D40E
-    LDA $D013
-    STA $03FA
-    RTS
-
-; NMI dispatcher: routes VBI vs DLI
-NMI_Handler:
-    BIT $D40F
-    BPL DLI_Handler
-    JMP ($0200)
-
-; DLI handler: save registers, clear NMIST, dispatch via $0222
-DLI_Handler:
-    CLD
-    PHA
-    TXA
-    PHA
-    TYA
-    PHA
-    STA $D40F
-    JMP ($0222)
-
-; IRQ/BRK handler: clear decimal, dispatch via OS vector $0216
-IRQ_BRK_Handler:
-    CLD
-    JMP ($0216)
-
-; IRQ handler body ($C030-$C28F)
-C030_IrqBody:
-    .BYTE $48, $AD, $0E, $D2, $29, $20, $D0, $0D, $A9, $DF, $8D, $0E, $D2, $A5, $10, $8D
-    .BYTE $0E, $D2, $6C, $0A, $02, $8A, $48, $AD, $FF, $D1, $2D, $49, $02, $F0, $03, $6C
-    .BYTE $38, $02, $A2, $06, $BD, $CF, $C0, $E0, $05, $D0, $04, $25, $10, $F0, $05, $2C
-    .BYTE $0E, $D2, $F0, $06, $CA, $10, $ED, $4C, $A0, $C0, $49, $FF, $8D, $0E, $D2, $A5
-    .BYTE $10, $8D, $0E, $D2, $E0, $00, $D0, $05, $AD, $6D, $02, $D0, $23, $BD, $D7, $C0
-    .BYTE $AA, $BD, $00, $02, $8D, $8C, $02, $BD, $01, $02, $8D, $8D, $02, $68, $AA, $6C
-    .BYTE $8C, $02, $A9, $00, $85, $11, $8D, $FF, $02, $8D, $F0, $02, $85, $4D, $68, $40
-    .BYTE $68, $AA, $2C, $02, $D3, $10, $06, $AD, $00, $D3, $6C, $02, $02, $2C, $03, $D3
-    .BYTE $10, $06, $AD, $01, $D3, $6C, $04, $02, $68, $8D, $8C, $02, $68, $48, $29, $10
-    .BYTE $F0, $07, $AD, $8C, $02, $48, $6C, $06, $02, $AD, $8C, $02, $48, $68, $40, $80
-    .BYTE $40, $04, $02, $01, $08, $10, $20, $36, $08, $14, $12, $10, $0E, $0C, $0A, $4C
-    .BYTE $DF, $C0, $E6, $14, $D0, $08, $E6, $4D, $E6, $13, $D0, $02, $E6, $12, $A9, $FE
-    .BYTE $A2, $00, $A4, $4D, $10, $06, $85, $4D, $A6, $13, $A9, $F6, $85, $4E, $86, $4F
-    .BYTE $AD, $C5, $02, $45, $4F, $25, $4E, $8D, $17, $D0, $A2, $00, $20, $55, $C2, $D0
-    .BYTE $03, $20, $4F, $C2, $A5, $42, $D0, $08, $BA, $BD, $04, $01, $29, $04, $F0, $03
-    .BYTE $4C, $8A, $C2, $AD, $13, $D0, $CD, $FA, $03, $D0, $B4, $AD, $0D, $D4, $8D, $35
-    .BYTE $02, $AD, $0C, $D4, $8D, $34, $02, $AD, $31, $02, $8D, $03, $D4, $AD, $30, $02
-    .BYTE $8D, $02, $D4, $AD, $2F, $02, $8D, $00, $D4, $AD, $6F, $02, $8D, $1B, $D0, $AD
-    .BYTE $6C, $02, $F0, $0E, $CE, $6C, $02, $A9, $08, $38, $ED, $6C, $02, $29, $07, $8D
-    .BYTE $05, $D4, $A2, $08, $8E, $1F, $D0, $58, $BD, $C0, $02, $45, $4F, $25, $4E, $9D
-    .BYTE $12, $D0, $CA, $10, $F2, $AD, $F4, $02, $8D, $09, $D4, $AD, $F3, $02, $8D, $01
-    .BYTE $D4, $A2, $02, $20, $55, $C2, $D0, $03, $20, $52, $C2, $A2, $02, $E8, $E8, $BD
-    .BYTE $18, $02, $1D, $19, $02, $F0, $06, $20, $55, $C2, $9D, $26, $02, $E0, $08, $D0
-    .BYTE $EC, $AD, $0F, $D2, $29, $04, $F0, $08, $AD, $F1, $02, $F0, $03, $CE, $F1, $02
-    .BYTE $AD, $2B, $02, $F0, $3E, $AD, $0F, $D2, $29, $04, $D0, $32, $CE, $2B, $02, $D0
-    .BYTE $32, $AD, $6D, $02, $D0, $2D, $AD, $DA, $02, $8D, $2B, $02, $AD, $09, $D2, $C9
-    .BYTE $9F, $F0, $20, $C9, $83, $F0, $1C, $C9, $84, $F0, $18, $C9, $94, $F0, $14, $29
-    .BYTE $3F, $C9, $11, $F0, $0E, $AD, $09, $D2, $8D, $FC, $02, $4C, $F3, $C1, $A9, $00
-    .BYTE $8D, $2B, $02, $AD, $00, $D3, $4A, $4A, $4A, $4A, $8D, $79, $02, $8D, $7B, $02
-    .BYTE $AD, $00, $D3, $29, $0F, $8D, $78, $02, $8D, $7A, $02, $AD, $10, $D0, $8D, $84
-    .BYTE $02, $8D, $86, $02, $AD, $11, $D0, $8D, $85, $02, $8D, $87, $02, $A2, $03, $BD
-    .BYTE $00, $D2, $9D, $70, $02, $9D, $74, $02, $CA, $10, $F4, $8D, $0B, $D2, $A2, $02
-    .BYTE $A0, $01, $B9, $78, $02, $4A, $4A, $4A, $9D, $7D, $02, $9D, $81, $02, $A9, $00
-    .BYTE $2A, $9D, $7C, $02, $9D, $80, $02, $CA, $CA, $88, $10, $E6, $6C, $24, $02, $6C
-    .BYTE $26, $02, $6C, $28, $02, $BC, $18, $02, $D0, $08, $BC, $19, $02, $F0, $10, $DE
-    .BYTE $19, $02, $DE, $18, $02, $D0, $08, $BC, $19, $02, $D0, $03, $A9, $00, $60, $A9
-    .BYTE $FF, $60, $0A, $8D, $2D, $02, $8A, $A2, $05, $8D, $0A, $D4, $CA, $D0, $FD, $AE
-    .BYTE $2D, $02, $9D, $17, $02, $98, $9D, $16, $02, $60, $68, $A8, $68, $AA, $68, $40
-
-; -----------------------------------------------------------------------------
-; Upper-bank bootstrap stub and overflow area
-; -----------------------------------------------------------------------------
-
-; Spy vs Spy (Title Version)
-; Partial mnemonic-first disassembly scaffold.
-; Recovered bootstrap/runtime fragments are represented as code;
-; opaque tables remain as data until the surrounding routines are finished.
-;
-; jsA8E boot note:
-; this XEX needs PORTB=$FE at reset so OS/BASIC/FP ROMs are hidden while
-; the C290+ segments are loaded into RAM.
-
-; -----------------------------------------------------------------------------
-; Bootstrap / loader path
-; -----------------------------------------------------------------------------
-
-.ORG $C290
-
-BootEntry:
-    SEI
-    LDA $D013
-    CMP $03FA
-    BNE BootFail
-    ROR A
-    BCC BootCheckBasic
-    JSR $C4C9
-    BNE BootFail
-
-BootCheckBasic:
-    LDA $0244
-    BNE BootFail
-    LDA #$FF
-    BNE BootStart
-
-BootFail:
-    SEI
-    LDX #$8C
-
-BootDelay:
-    DEY
-    BNE BootDelay
-    DEX
-    BNE BootDelay
-    LDA $033D
-    CMP #$5C
-    BNE BootFailClear
-    LDA $033E
-    CMP #$93
-    BNE BootFailClear
-    LDA $033F
-    CMP #$25
-    BEQ BootEntry
-
-BootFailClear:
-    LDA #$00
-
-BootStart:
-    STA $08
-    SEI
-    CLD
-    LDX #$FF
-    TXS
-    JSR $C471
-    LDA #$01
-    STA $01
-    LDA $08
-    BNE BootAltPath
-
-    LDA #$00
-    LDY #$08
-    STA $04
-    STA $05
-
-BootProbeLoop:
-    LDA #$FF
-    STA ($04),Y
-    CMP ($04),Y
-    BEQ BootProbeZero
-    LSR $01
-
-BootProbeZero:
-    LDA #$00
-    STA ($04),Y
-    CMP ($04),Y
-    BEQ BootProbeNext
-    LSR $01
-
-BootProbeNext:
-    INY
-    BNE BootProbeLoop
-    INC $05
-    LDX $05
-    CPX $06
-    BNE BootProbeLoop
-    LDA #$23
-    STA $0A
-    LDA #$F2
-    STA $0B
-    LDA $D301
-    AND #$7F
-    STA $D301
-    JSR $FF73
-    BCS BootProbeSkip
-    JSR $FF92
-    BCC BootProbeDone
-
-BootProbeSkip:
-    LSR $01
-
-BootProbeDone:
-    LDA $D301
-    ORA #$80
-    STA $D301
-    LDA #$FF
-    STA $0244
-    BNE BootInitDisplay
-
-BootAltPath:
-    LDX #$00
-    LDA $03EC
-    BEQ BootClearState
-    STX $000E
-    STX $000F
-    TXA
-
-BootClearState:
-    STA $0200,X
-    CPX #$ED
-    BCS BootClearHigh
-    STA $0300,X
-
-BootClearHigh:
-    DEX
-    BNE BootClearState
-    LDX #$10
-
-BootClearShadow:
-    STA $00,X
-    INX
-    BPL BootClearShadow
-
-BootInitDisplay:
-    LDX #$00
-    LDA $D301
-    AND #$02
-    BEQ BootSelectMode
-    INX
-
-BootSelectMode:
-    STX $03F8
-    LDA #$5C
-    STA $033D
-    LDA #$93
-    STA $033E
-    LDA #$25
-    STA $033F
-    LDA #$02
-    STA $52
-    LDA #$27
-    STA $53
-    LDA $D014
-    AND #$0E
-    BNE BootModeHi
-
-    LDA #$05
-    LDX #$01
-    LDY #$28
-    BNE BootModeStore
-
-BootModeHi:
-    LDA #$06
-    LDX #$00
-    LDY #$30
-
-BootModeStore:
-    STA $02DA
-    STX $62
-    STY $02D9
-    LDX #$25
-
-BootCopyLoop1:
-    LDA $C44B,X
-    STA $0200,X
-    DEX
-    BPL BootCopyLoop1
-
-    LDX #$0E
-
-BootCopyLoop2:
-    LDA $C42E,X
-    STA $031A,X
-    DEX
-    BPL BootCopyLoop2
-
-    JSR $C535
-    CLI
-    LDA $01
-    BNE BootContinue
-    LDA $D301
-    AND #$7F
-    STA $D301
-    LDA #$02
-    STA $02F3
-    LDA #$E0
-    STA $02F4
-    JMP $5003
-
-BootContinue:
-    LDX #$00
-    STX $06
-    LDX $02E4
-    CPX #$B0
-    BCS BootDisplayDone
-    LDX $BFFC
-    BNE BootDisplayDone
-    INC $06
-    JSR $C4C9
-    JSR $C429
-
-BootDisplayDone:
-    LDA #$03
-    LDX #$00
-    STA $0342,X
-    LDA #$48
-    STA $0344,X
-    LDA #$C4
-    STA $0345,X
-    LDA #$0C
-    STA $034A,X
-    JSR $E456
-    BPL BootDelayExit
-    JMP $C2AA
-
-BootDelayExit:
-    INX
-    BNE BootDelayExit
-    INY
-    BPL BootDelayExit
-    JSR $C66E
-    LDA $06
-    BEQ BootAfterDelay
-    LDA $BFFD
-    ROR A
-    BCC BootAfterDelayCheck
-
-BootAfterDelay:
-    JSR $C58B
-    JSR $E739
-
-BootAfterDelayCheck:
-    LDA #$00
-    STA $0244
-    LDA $06
-    BEQ BootInitVbi
-    LDA $BFFD
-    AND #$04
-    BEQ BootInitVbi
-    JMP ($BFFA)
-
-BootInitVbi:
-    JMP ($000A)
-
-    JMP ($BFFE)
-
-    CLC
-    RTS
-
-; -----------------------------------------------------------------------------
-; Local bootstrap tables
-; -----------------------------------------------------------------------------
-
-.ORG $C42E
-
-BootTextAndVectors:
-    .BYTE $50, $30, $E4, $43, $40, $E4, $45, $00, $E4, $53, $10, $E4, $4B, $20, $E4, $42
-    .BYTE $4F, $4F, $54, $20, $45, $52, $52, $4F, $52, $9B, $45, $3A, $9B, $CE, $C0, $CD
-    .BYTE $C0, $CD, $C0, $CD, $C0, $19, $FC, $2C, $EB, $AD, $EA, $EC, $EA, $CD, $C0, $CD
-    .BYTE $C0, $CD, $C0, $30, $C0, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $E2
-
-; -----------------------------------------------------------------------------
-; Reset / display tail
-; -----------------------------------------------------------------------------
-
-.ORG $C471
-
-LoaderBootEntry:
-    LDA $D013
-    ROR A
-    BCC LoaderBootSkipCheck
-    LDA $BFFC
-    BNE LoaderBootSkipCheck
-    LDA $BFFD
-    BPL LoaderBootSkipCheck
-    JMP ($BFFE)
-
-LoaderBootSkipCheck:
-    JSR $C4DA
-    LDA $D301
-    ORA #$02
-    STA $D301
-    LDA $08
-    BEQ LoaderOptionClear
-    LDA $03F8
-    BNE LoaderOptionOnStart
-    BEQ LoaderOptionClear
-
-LoaderOptionClear:
-    LDA $D01F
-    AND #$04
-    BEQ LoaderOptionOnStart
-    LDA $D301
-    AND #$FD
-    STA $D301
-
-LoaderOptionOnStart:
-    LDA #$00
-    TAY
-    STA $05
-    LDA #$28
-    STA $06
-
-LoaderProbeLoop:
-    LDA ($05),Y
-    EOR #$FF
-    STA ($05),Y
-    CMP ($05),Y
-    BNE LoaderProbeDone
-    EOR #$FF
-    STA ($05),Y
-    CMP ($05),Y
-    BNE LoaderProbeDone
-    INC $06
-    BNE LoaderProbeLoop
-
-LoaderProbeDone:
-    RTS
-
-LoaderChecksumStart:
-    LDA #$00
-    TAX
-    CLC
-
-LoaderChecksumLoop:
-    ADC $BFF0,X
-    INX
-    BNE LoaderChecksumLoop
-    CMP $03EB
-    STA $03EB
-    RTS
-
-.ORG $C4DA
-
-ResetDisplayTail:
-    LDA #$00
-    TAX
-    STA $D303
-    STA $D000,X
-    STA $D400,X
-    STA $D200,X
-    CPX #$01
-    BEQ ResetDisplayNext
-    STA $D300,X
-
-ResetDisplayNext:
-    INX
-    BNE ResetDisplayTail
-    LDA #$3C
-    STA $D303
-    LDA #$FF
-    STA $D301
-    LDA #$38
-    STA $D302
-    STA $D303
-    LDA #$00
-    STA $D300
-    LDA #$FF
-    STA $D301
-    LDA #$3C
-    STA $D302
-    STA $D303
-    LDA $D301
-    LDA $D300
-    LDA #$22
-    STA $D20F
-    LDA #$A0
-    STA $D205
-    STA $D207
-    LDA #$28
-    STA $D208
-    LDA #$FF
-    STA $D20D
-    RTS
-
-; -----------------------------------------------------------------------------
-; Runtime setup helper
-; -----------------------------------------------------------------------------
-
-.ORG $C535
-
-RuntimeSetup:
-    DEC $11
-    LDA #$92
-    STA $0236
-    LDA #$C0
-    STA $0237
-    LDA $06
-    STA $02E4
-    STA $02E6
-    LDA #$00
-    STA $02E5
-    LDA #$00
-    STA $02E7
-    LDA #$07
-    STA $02E8
-    JSR $E40C
-    JSR $E41C
-    JSR $E42C
-    JSR $E43C
-    JSR $E44C
-    JSR $E46E
-    JSR $E465
-    JSR $E46B
-    JSR $E450
-    LDA #$6E
-    STA $0238
-    LDA #$C9
-    STA $0239
-    JSR $E49B
-    LDA $D01F
-    AND #$01
-    EOR #$01
-    STA $03E9
-    RTS
-
-BootMenuEntry:
-    LDA $08
-    BEQ BootMenuInit
-    LDA $09
-    AND #$01
-    BEQ BootMenuAbort
-    JMP $C63B
-
-BootMenuInit:
-    LDA #$01
-    STA $0301
-    LDA #$53
-    STA $0302
-    JSR $E453
-    BMI BootMenuAbort
-    LDA #$00
-    STA $030B
-
-BootMenuAbort:
-    JMP $C63B
-
-.ORG $C5C9
-
-MenuContinueCopy:
-    LDX #$03
-
-MenuCopyShadow:
-    LDA $0400,X
-    STA $0240,X
-    DEX
-    BPL MenuCopyShadow
-    LDA $0242
-    STA $04
-    LDA $0243
-    STA $05
-    LDA $0404
-    STA $0C
-    LDA $0405
-    STA $0D
-    LDY #$7F
-
-MenuCopyLoop:
-    LDA $0400,Y
-    STA ($04),Y
-    DEY
-    BPL MenuCopyLoop
-    CLC
-    LDA $04
-    ADC #$80
-    STA $04
-    LDA $05
-    ADC #$00
-    STA $05
-    DEC $0241
-    BEQ MenuCopyDone
-    INC $030A
-    JSR $C659
-    BPL MenuCopyLoop
-    JSR $C63E
-    LDA $03EA
-    BNE MenuCopyAbort
-    BEQ MenuCopyResume
-
-MenuCopyDone:
-    LDA $03EA
-    BEQ MenuInitPath
-    JSR $C659
-
-MenuInitPath:
-    JSR $C629
-    BCS MenuCopyAbort
-    JSR $C63B
-    INC $09
-    RTS
-
-MenuCopyResume:
-    LDA $03EA
-    BNE MenuCopyAbort
-    BEQ MenuContinuePath
-
-MenuCopyAbort:
-    RTS
-
-MenuContinuePath:
-    LDA $03EA
-    BEQ MenuContinueGo
-    JSR $C659
-
-MenuContinueGo:
-    JSR $C629
-    BCS MenuCopyAbort
-    JSR $C63B
-    INC $09
-    RTS
-
-MenuFinalize:
-    CLC
-    LDA $0242
-    ADC #$06
-    STA $04
-    LDA $0243
-    ADC #$00
-    STA $05
-    JMP ($0004)
-
-MenuAbortJump:
-    JMP ($000C)
-
-MenuSaveState:
-    LDX #$3D
-    LDY #$C4
-    TXA
-    LDX #$00
-    STA $0344,X
-    TYA
-    STA $0345,X
-    LDA #$09
-    STA $0342,X
-    LDA #$FF
-    STA $0348,X
-    JMP $E456
-
-MenuCheckState:
-    LDA $03EA
-    BEQ MenuCheckDefault
-    JMP $E47A
-
-MenuCheckDefault:
-    LDA #$52
-    STA $0302
-    LDA #$01
-    STA $0301
-    JMP $E453
-
-MenuCheckBank:
-    LDA $08
-    BEQ MenuCheckStart
-    LDA $09
-    AND #$02
-    BEQ MenuCheckReset
-    JMP $C6A0
-
-MenuCheckStart:
-    LDA $03E9
-    BEQ MenuCheckReset
-    LDA #$80
-    STA $3E
-    INC $03EA
-    JSR $E47D
-    JSR $C5BB
-    LDA #$00
-    STA $03EA
-    STA $03E9
-    ASL $09
-    LDA $0C
-    STA $02
-    LDA $0D
-    STA $03
-    RTS
-
-MenuCheckReset:
-    JMP ($0002)
-
-MenuSetMode:
-    LDA #$A0
-    STA $0246
-    LDA #$80
-    STA $02D5
-    LDA #$00
-    STA $02D6
-    RTS
-
-MenuModeOne:
-    LDA #$31
-    STA $0300
-    LDA $0246
-    LDX $0302
-    CPX #$21
-    BEQ MenuModeOneDone
-    LDA #$07
-
-MenuModeOneDone:
-    STA $0306
-    LDX #$40
-    LDA $0302
-    CMP #$50
-    BEQ MenuModeOneAlt
-    CMP #$57
-    BNE MenuModeOneSkip
-
-MenuModeOneAlt:
-    LDX #$80
-
-MenuModeOneSkip:
-    CMP #$53
-    BNE MenuModeOneTail
-    LDA #$EA
-    STA $0304
-    LDA #$02
-    STA $0305
-    LDY #$04
-    LDA #$00
-    BEQ MenuModeOneStore
-
-MenuModeOneTail:
-    LDY $02D5
-    LDA $02D6
-
-MenuModeOneStore:
-    STX $0303
-    STY $0308
-    STA $0309
-    JSR $E459
-    BPL MenuModeOneExit
-    RTS
-
-MenuModeOneExit:
-    LDA $0302
-    CMP #$53
-    BNE MenuModeOneName
-    JSR $C73A
-    LDY #$02
-    LDA ($15),Y
-    STA $0246
-
-MenuModeOneName:
-    LDA $0302
-    CMP #$21
-    BNE MenuModeOnePlayer
-    JSR $C73A
-    LDY #$FE
-    INY
-    INY
-    LDA ($15),Y
-    CMP #$FF
-    BNE MenuModeOneName
-    INY
-    LDA ($15),Y
-    INY
-    CMP #$FF
-    BNE MenuModeOneName
-    DEY
-    DEY
-    STY $0308
-    LDA #$00
-    STA $0309
-
-MenuModeOnePlayer:
-    LDY $0303
-    RTS
-
-MenuModeOnePtr:
-    LDA $0304
-    STA $15
-    LDA $0305
-    STA $16
-    RTS
-
-; Remaining code blocks in the $C5xx-$FFD6 runtime chain are still pending.
-
-; -----------------------------------------------------------------------------
-; Lower-bank main/runtime chain
-; -----------------------------------------------------------------------------
-
-.ORG $E98D
-
-LowerBankFrameEntry:
-    LDA #$0D
-    STA $029C
-    LDA #$28
-    STA $D204
-    LDA #$00
-    STA $D206
-    CLC
-    LDA $0300
-    ADC $0301
-    ADC #$FF
-    STA $023A
-    LDA $0302
-    STA $023B
-    LDA $030A
-    STA $023C
-    LDA $030B
-    STA $023D
-    CLC
-    LDA #$3A
-    STA $32
-    ADC #$04
-    STA $34
-    LDA #$02
-    STA $33
-    STA $35
-    LDA #$34
-    STA $D303
-    JSR $ECAF
-    LDA $023F
-    BNE LowerBankIdleTick
-    TYA
-    BNE LowerBankAdvanceTurn
-LowerBankIdleTick:
-    DEC $029C
-    BPL LowerBankFrameEntry
-    JMP $EA22
-LowerBankAdvanceTurn:
-    LDA $0303
-    BPL LowerBankInputReady
-    LDA #$0D
-    STA $029C
-    JSR $EB87
-    JSR $ECAF
-    BEQ $EA22
-LowerBankInputReady:
-    JSR $EC9A
-    LDA #$00
-    STA $023F
-    JSR $ECC0
-    BEQ LowerBankAfterMove
-    BIT $0303
-    BVS LowerBankActionPath
-    LDA $023F
-    BNE $EA22
-    BEQ $EA2A
-LowerBankActionPath:
-    JSR $EB87
-    JSR $EAFD
-LowerBankAfterMove:
-    LDA $023F
-    BEQ LowerBankTurnCheck
-    LDA $0319
-    STA $30
-LowerBankTurnCheck:
-    LDA $30
-    CMP #$01
-    BEQ $EA2A
-    DEC $02BD
-    BMI $EA2A
-    JMP $E98D
-
-EA22:
-    DEC $02BD
-    BMI $EA2A
-    JMP $E98D
-
-EA2A:
-    JSR $EC84
-    LDA #$00
-    STA $42
-    LDY $30
-    STY $0303
-    RTS
-
-EA37:
-    LDA #$00
-    STA $023F
-    CLC
-    LDA #$3E
-    STA $32
-    ADC #$01
-    STA $34
-    LDA #$02
-    STA $33
-    STA $35
-    LDA #$FF
-    STA $3C
-    JSR $EAFD
-    LDY #$FF
-    LDA $30
-    CMP #$01
-    BNE EA73
-    LDA $023E
-    CMP #$41
-    BEQ EA82
-    CMP #$43
-    BEQ EA82
-    CMP #$45
-    BNE EA6F
-    LDA #$90
-    STA $30
-    BNE EA73
-EA6F:
-    LDA #$8B
-    STA $30
-EA73:
-    LDA $30
-    CMP #$8A
-    BEQ EA80
-    LDA #$FF
-    STA $023F
-    BNE EA82
-EA80:
-    LDY #$00
-EA82:
-    LDA $30
-    STA $0319
-    RTS
-
-EA88:
-    LDA #$01
-    STA $30
-    JSR $EC17
-    LDY #$00
-    STY $31
-    STY $3B
-    STY $3A
-    LDA ($32),Y
-    STA $D20D
-    STA $31
-    LDA $11
-    BNE $EAA5
-    JMP $EDC7
-EAA5:
-    LDA $3A
-    BEQ $EA9E
-    JSR $EC84
-EAAC:
-    RTS
-
-EAAD:
-    TYA
-    PHA
-    INC $32
-    BNE $EAB5
-    INC $33
-EAB5:
-    LDA $32
-    CMP $34
-    LDA $33
-    SBC $35
-    BCC $EADB
-    LDA $3B
-    BNE $EACE
-    LDA $31
-    STA $D20D
-    LDA #$FF
-    STA $3B
-    BNE $EAD7
-EACE:
-    LDA $10
-    ORA #$08
-    STA $10
-    STA $D20E
-EAD7:
-    PLA
-    TAY
-    PLA
-    RTI
-EADB:
-    LDY #$00
-    LDA ($32),Y
-    STA $D20D
-    CLC
-    ADC $31
-    ADC #$00
-    STA $31
-    JMP $EAD7
-EAEC:
-    LDA $3B
-    BEQ $EAFB
-    STA $3A
-    LDA $10
-    AND #$F7
-    STA $10
-    STA $D20E
-EAFB:
-    PLA
-EAFC:
-    RTI
-
-EAFD:
-    LDA #$00
-EAFF:
-    LDY $030F
-    BNE $EB06
-    STA $31
-EB06:
-    STA $38
-    STA $39
-    LDA #$01
-    STA $30
-    JSR $EC40
-    LDA #$3C
-    STA $D303
-    LDA $11
-    BNE $EB1D
-    JMP $EDC7
-EB1D:
-    LDA $0317
-    BEQ $EB27
-    LDA $39
-    BEQ $EB16
-    RTS
-EB27:
-    LDA #$8A
-    STA $30
-    RTS
-EB2C:
-    TYA
-    PHA
-    LDA $D20F
-    STA $D20A
-    BMI $EB3A
-    LDY #$8C
-    STY $30
-EB3A:
-    AND #$20
-    BNE $EB42
-    LDY #$8E
-    STY $30
-EB42:
-    LDA $38
-    BEQ $EB59
-    LDA $D20D
-    CMP $31
-    BEQ $EB51
-    LDY #$8F
-    STY $30
-EB51:
-    LDA #$FF
-    STA $39
-    PLA
-    TAY
-    PLA
-    RTI
-EB59:
-    LDA $D20D
-    LDY #$00
-    STA ($32),Y
-    CLC
-    ADC $31
-    ADC #$00
-    STA $31
-    INC $32
-    BNE $EB6D
-    INC $33
-EB6D:
-    LDA $32
-    CMP $34
-    LDA $33
-    SBC $35
-    BCC $EB55
-    LDA $3C
-    BEQ $EB81
-    LDA #$00
-    STA $3C
-    BEQ $EB51
-EB81:
-    LDA #$FF
-    STA $38
-    BNE $EB55
-
-.ORG $ECAF
-
-LowerBankSetupHelper:
-    LDX #$01
-ECB1:
-    LDY #$FF
-ECB3:
-    DEY
-    BNE $ECB3
-    DEX
-    BNE $ECB1
-    JSR $EA88
-    LDY #$02
-    LDX #$00
-    JSR $EDE2
-    JSR $EA37
-    TYA
-    RTS
-
-ECC8:
-    STA $0310
-    STY $0311
-    JSR $ED2E
-    STA $0310
-    LDA $030C
-    JSR $ED2E
-    STA $030C
-    LDA $0310
-    SEC
-    SBC $030C
-    STA $0312
-    LDA $0311
-    SEC
-    SBC $030D
-    TAY
-    LDX $62
-ECF1:
-    LDA #$00
-    SEC
-    SBC $EE19,X
-    CLC
-    ADC $EE19,X
-    DEY
-    BPL $ECF7
-    CLC
-    ADC $0312
-    TAY
-    LSR A
-    LSR A
-    LSR A
-    ASL A
-    SEC
-    SBC #$16
-    TAX
-    TYA
-    AND #$07
-    TAY
-    LDA #$F5
-    CLC
-    ADC #$0B
-    DEY
-    BPL $ED11
-    LDY #$00
-    SEC
-    SBC #$07
-    BPL $ED1F
-    DEY
-ED1F:
-    CLC
-    ADC $EDF9,X
-    STA $02EE
-    TYA
-    ADC $EDFA,X
-    STA $02EF
-    RTS
-
-ED2E:
-    CMP #$7C
-    BMI $ED36
-    SEC
-    SBC #$7C
-    RTS
-ED36:
-    CLC
-    LDX $62
-    ADC $EE1B,X
-    RTS
-
-ED3D:
-    LDA $11
-    BNE $ED44
-    JMP $EDC7
-ED44:
-    SEI
-    LDA $0317
-    BNE $ED4C
-    BEQ $ED71
-ED4C:
-    LDA $D20F
-    AND #$10
-    BNE $ED3D
-    STA $0316
-    LDX $D40B
-    LDY $14
-    STX $030C
-    STY $030D
-    LDX #$01
-    STX $0315
-    LDY #$0A
-    LDA $11
-    BEQ $EDC7
-    LDA $0317
-    BNE $ED75
-ED71:
-    CLI
-    JMP $EB27
-ED75:
-    LDA $D20F
-    AND #$10
-    CMP $0316
-    BEQ $ED68
-    STA $0316
-    DEY
-    BNE $ED68
-    DEC $0315
-    BMI $ED96
-    LDA $D40B
-    LDY $14
-    JSR $ECC8
-    LDY #$09
-    BNE $ED68
-ED96:
-    LDA $02EE
-    STA $D204
-    LDA $02EF
-    STA $D206
-    LDA #$00
-    STA $D20F
-    LDA $0232
-    STA $D20F
-EDAD:
-    LDA #$55
-    STA ($32),Y
-    INY
-    STA ($32),Y
-    LDA #$AA
-    STA $31
-    CLC
-    LDA $32
-    ADC #$02
-    STA $32
-    LDA $33
-    ADC #$00
-    STA $33
-    CLI
-    RTS
-
-EDC7:
-    JSR $EC84
-    LDA #$3C
-    STA $D302
-    LDA #$3C
-    STA $D303
-    LDA #$80
-    STA $30
-    LDX $0318
-    TXS
-    DEC $11
-    CLI
-    JMP $EA2A
-
-; -----------------------------------------------------------------------------
-; VBI runtime tail
-; -----------------------------------------------------------------------------
-
-.ORG $EDE2
-
-VbiInstallTail:
-    LDA #$11
-    STA $0226
-    LDA #$EC
-    STA $0227
-    LDA #$01
-    SEI
-    JSR $E45C
-    LDA #$01
-    STA $0317
-    CLI
-    RTS
-    LDA #$01
-    SEI
-    JSR $E45C
-    LDA #$01
-    STA $0317
-    CLI
-    RTS
-
-; -----------------------------------------------------------------------------
-; Upper-bank gameplay/runtime entry
-; -----------------------------------------------------------------------------
-
-.ORG $EF00
-
-UpperBankInit:
-    LDX $10E7,Y
-    SLO ($A0,X)
-    DOP #$60
-    LDA #$7F
-    STA $20
-    LDA #$25
-    STA $26
-    LDA #$EF
-    STA $27
-    LDA $02EC
-    LDX $002E
-    STA $034D,X
-    LDY #$00
-    LDA ($24),Y
-    STA $034C,X
-    LDY #$01
-    RTS
-
-EF26:
-    PHA
-    TXA
-    PHA
-    AND #$0F
-    BNE $EF3D
-    CPX #$80
-    BPL $EF3D
-    LDA $02E9
-    BNE $EF41
-EF36:
-    LDY #$82
-    PLA
-    PLA
-    CPY #$00
-    RTS
-EF3D:
-    LDY #$86
-    BMI $EF38
-EF41:
-    STX $002E
-    LDY #$00
-    LDA $0340,X
-    STA $0020,Y
-    INX
-    INY
-    CPY #$0C
-    BMI $EF46
-    JSR $CA29
-    BMI $EF38
-    PLA
-    TAX
-    PLA
-    TAY
-    LDA $27
-    PHA
-    LDA $26
-    PHA
-    TYA
-    LDY #$92
-    RTS
-EF65:
-    BRK
-    BRK
-    BRK
-    BRK
-    BRK
-    BRK
-    JMP $FD05
-    LDA #$FF
-    STA $02FC
-    LDA $02E4
-    STA $6A
-    LDA #$40
-    STA $02BE
-    LDA #$51
-    STA $79
-    LDA #$FB
-    STA $7A
-    LDA #$11
-    STA $60
-    LDA #$FC
-    STA $61
-    RTS
-
-EF8E:
-    LDA $2B
-    AND #$0F
-    BNE $EF9C
-    LDA $2A
-    AND #$0F
-    STA $2A
-    LDA #$00
-EF9C:
-    STA $57
-    CMP #$10
-    BCC $EFA7
-    LDA #$91
-    JMP $F154
-
-EFA7:
-    LDA #$E0
-    STA $02F4
-    LDA #$CC
-    STA $026B
-    LDA #$02
-    STA $02F3
-    STA $022F
-    LDA #$01
-    STA $4C
-    LDA #$C0
-    ORA $10
-    STA $10
-    STA $D20E
-    LDA #$40
-    STA $D40E
-    BIT $026E
-    BPL $EFDC
-    LDA #$C4
-    STA $0200
-    LDA #$FC
-    STA $0201
-    LDA #$C0
-EFDC:
-    STA $D40E
-    LDA #$00
-    STA $0293
-    STA $64
-    STA $7B
-    STA $02F0
-    LDY #$0E
-    LDA #$01
-    STA $02A3,Y
-    DEY
-    BPL $EFEF
-    LDX #$04
-    LDA $FB08,X
-    STA $02C4,X
-    DEX
-    BPL $EFF7
-    LDY $6A
-    DEY
-    STY $0295
-    LDA #$60
-    STA $0294
-    LDX $57
-    LDA $EE4D,X
-    STA $51
-    LDA $6A
-    STA $65
-    LDY $EE1D,X
-    LDA #$28
-    JSR $F57A
-    DEY
-    BNE $F019
-    LDA $026F
-    AND #$3F
-    STA $67
-    TAY
-    CPX #$08
-    BCC $F04C
-    CPX #$0F
-    BEQ $F03E
-    CPX #$0C
-    BCS $F04C
-    TXA
-    ROR A
-    ROR A
-    ROR A
-    AND #$C0
-    ORA $67
-    TAY
-F03E:
-    LDA #$10
-    JSR $F57A
-    CPX #$0B
-    BNE $F04C
-    LDA #$06
-    STA $02C8
-
-F04C:
-    STY $026F
-    LDA $64
-    STA $58
-    LDA $65
-    STA $59
-    LDA $D40B
-    CMP #$7A
-    BNE $F057
-    JSR $F578
-    LDA $EE5D,X
-    BEQ $F06C
-    LDA #$FF
-    STA $64
-    DEC $65
-F06C:
-    JSR $F565
-    LDA $64
-    STA $68
-    LDA $65
-    STA $69
-    LDA #$41
-    JSR $F570
-    STX $66
-    LDA #$18
-    STA $02BF
-    LDA $57
-    CMP #$0C
-    BCS $F08D
-    CMP #$09
-    BCS $F0C6
-F08D:
-    LDA $2A
-    AND #$10
-    BEQ $F0C6
-    LDA #$04
-    STA $02BF
-    LDX #$02
-    LDA $026E
-    BEQ $F0A2
-    JSR $F5A0
-F0A2:
-    LDA #$02
-    JSR $F569
-    DEX
-    BPL $F0A2
-    LDY $6A
-    DEY
-    TYA
-    JSR $F570
-    LDA #$60
-    JSR $F570
-    LDA #$42
-    JSR $F569
-    CLC
-    LDA #$10
-    ADC $66
-    TAY
-    LDX $EE2D,Y
-    BNE $F0DB
-F0C6:
-    LDY $66
-    LDX $EE2D,Y
-    LDA $57
-    BNE $F0DB
-    LDA $026E
-    BEQ $F0DB
-    JSR $F5A0
-    LDA #$22
-    STA $51
-F0DB:
-    LDA $51
-    JSR $F570
-    DEX
-    BNE $F0DB
-    LDA $57
-    CMP #$08
-    BCC $F10F
-    CMP #$0F
-    BEQ $F0F1
-    CMP #$0C
-    BCS $F10F
-F0F1:
-    LDX #$5D
-    LDA $6A
-    SEC
-    SBC #$10
-    JSR $F570
-    LDA #$00
-    JSR $F570
-    LDA $51
-    ORA #$40
-    JSR $F570
-    LDA $51
-    JSR $F570
-    DEX
-    BNE $F107
-F10F:
-    LDA $59
-    JSR $F570
-    LDA $58
-    JSR $F570
-    LDA $51
-    ORA #$40
-    JSR $F570
-    LDA #$70
-    JSR $F570
-    LDA #$70
-    JSR $F570
-    LDA $64
-    STA $0230
-    LDA $65
-    STA $0231
-    LDA #$70
-    JSR $F570
-    LDA $64
-    STA $02E5
-    LDA $65
-    STA $02E6
-    LDY #$01
-    LDA $0230
-    STA ($68),Y
-    INY
-    LDA $0231
-    STA ($68),Y
-    LDA $4C
-    BPL $F164
-    STA $03EC
-    JSR $EF94
-    LDA $03EC
-    LDY #$00
-    STY $03EC
-    TAY
-    RTS
-
-F164:
-    LDA $2A
-    AND #$20
-    BNE $F175
-    JSR $F420
-    STA $0290
-    LDA $52
-    STA $0291
-F175:
-    LDA #$22
-    ORA $022F
-    STA $022F
-    JMP $F20B
-
-F180:
-    JSR $F6CA
-    JSR $F18F
-    JSR $F76A
-    JSR $F60A
-    JMP $F21E
-
-F18F:
-    JSR $F5AC
-    LDA ($64),Y
-    AND $02A0
-    LSR $6F
-    BCS $F19E
-    LSR A
-    BPL $F197
-F19E:
-    STA $02FA
-    CMP #$00
-    RTS
-
-F1A4:
-    STA $02FB
-    CMP #$7D
-    BNE $F1B1
-    JSR $F420
-    JMP $F20B
-
-F1B1:
-    JSR $F6CA
-    LDA $02FB
-    CMP #$9B
-    BNE $F1C1
-    JSR $F661
-    JMP $F20B
-
-F1C1:
-    JSR $F1CA
-    JSR $F60E
-    JMP $F20B
-
-F1CA:
-    LDA $02FF
-    BNE $F1CA
-    LDX #$02
-    LDA $54,X
-    STA $5A,X
-    DEX
-    BPL $F1D1
-    LDA $02FB
-    TAY
-    ROL A
-    ROL A
-    ROL A
-    ROL A
-    AND #$03
-    TAX
-    TYA
-    AND #$9F
-    ORA $FB49,X
-    STA $02FA
-    JSR $F5AC
-    LDA $02FA
-    LSR $6F
-    BCS $F1FA
-    ASL A
-    JMP $F1F2
-
-F1FA:
-    AND $02A0
-    STA $50
-    LDA $02A0
-    EOR #$FF
-    AND ($64),Y
-    ORA $50
-    STA ($64),Y
-    RTS
-
-F20B:
-    JSR $F18F
-    STA $5D
-    LDX $57
-    BNE $F21E
-    LDX $02F0
-    BNE $F21E
-    EOR #$80
-    JSR $F1E9
-
-F21E:
-    LDY $4C
-    JMP $F226
-
-F223:
-    JMP $C8FC
-
-F226:
-    LDA #$01
-    STA $4C
-    LDA $02FB
-    RTS
-
-F22E:
-    BIT $026E
-    BPL $F21E
-    LDA #$40
-    STA $D40E
-    LDA #$00
-    STA $026E
-    LDA #$CE
-    STA $0200
-    LDA #$C0
-    STA $0201
-    JMP $EF94
-
-F24A:
-    JSR $F962
-    JSR $F6BC
-    LDA $6B
-    BNE $F288
-    LDA $54
-    STA $6C
-    LDA $55
-    STA $6D
-F25C:
-    JSR $F2FD
-    STY $4C
-    LDA $02FB
-    CMP #$9B
-    BEQ $F27A
-    JSR $F2BE
-    JSR $F962
-    LDA $63
-    CMP #$71
-    BNE $F277
-    JSR $F556
-F277:
-    JMP $F25C
-
-F27A:
-    JSR $F718
-    JSR $F8B1
-    LDA $6C
-    STA $54
-    LDA $6D
-    STA $55
-
-F288:
-    LDA $6B
-    BEQ $F29D
-    DEC $6B
-    BEQ $F29D
-    LDA $4C
-    BMI $F28C
-    JSR $F180
-    STA $02FB
-    JMP $F962
-
-F29D:
-    JSR $F661
-    LDA #$9B
-    STA $02FB
-    JSR $F20B
-    STY $4C
-    JMP $F962
-
-F2AD:
-    JMP ($0064)
-
-F2B0:
-    STA $02FB
-    JSR $F962
-    JSR $F6BC
-    LDA #$00
-    STA $03E8
-    JSR $F718
-    JSR $F93C
-    BEQ $F2CF
-    ASL $02A2
-    JSR $F1B4
-    JMP $F962
-
-F2CF:
-    LDA $02FE
-    ORA $02A2
-    BNE $F2C6
-    ASL $02A2
-    INX
-    LDA $03E8
-    BEQ $F2E5
-    TXA
-    CLC
-    ADC #$2D
-    TAX
-F2E5:
-    LDA $FB0D,X
-    STA $64
-    LDA $FB0E,X
-    STA $65
-    JSR $F2AD
-    JSR $F20B
-    JMP $F962
-
-F2F8:
-    LDA #$FF
-    STA $02FC
-
-F2FD:
-    LDA #$00
-    STA $03E8
-    LDA $2A
-    LSR A
-    BCS $F376
-    LDA #$80
-    LDX $11
-    BEQ $F372
-    LDA $02FC
-    CMP #$FF
-    BEQ $F2FD
-    STA $7C
-    LDX #$FF
-    STX $02FC
-    LDX $02DB
-    BNE $F323
-    JSR $F983
-F323:
-    TAY
-    CPY #$C0
-    BCS $F2F8
-    LDA ($79),Y
-    STA $02FB
-    TAX
-    BMI $F333
-    JMP $F3B4
-    CMP #$80
-    BEQ $F2F8
-    CMP #$81
-    BNE $F345
-    LDA $02B6
-    EOR #$80
-    STA $02B6
-    BCS $F2F8
-    CMP #$82
-    BNE $F355
-    LDA $02BE
-    BEQ $F359
-    LDA #$00
-    STA $02BE
-    BEQ $F2F8
-    CMP #$83
-    BNE $F360
-    LDA #$40
-    STA $02BE
-    BNE $F2F8
-    CMP #$84
-    BNE $F36C
-    LDA #$80
-    STA $02BE
-    JMP $F2F8
-    CMP #$85
-    BNE $F37B
-    LDA #$88
-    STA $4C
-    STA $11
-    LDA #$9B
-    JMP $F3DA
-
-.ORG $F3A5
-
-F3A5:
-    CMP #$92
-    BCS $F3B4
-    CMP #$8E
-    BCC $F38C
-    SBC #$72
-    INC $03E8
-    BNE $F3DA
-
-F3B4:
-    LDA $7C
-    CMP #$40
-    BCS $F3CF
-    LDA $02FB
-    CMP #$61
-    BCC $F3CF
-    CMP #$7B
-    BCS $F3CF
-    LDA $02BE
-    BEQ $F3CF
-    ORA $7C
-    JMP $F323
-
-F3CF:
-    JSR $F93C
-    BEQ $F3DD
-    LDA $02FB
-    EOR $02B6
-    STA $02FB
-F3DD:
-    JMP $F21E
-
-F3E0:
-    LDA #$80
-    STA $02A2
-    RTS
-
-F3E6:
-    DEC $54
-    BPL $F3F0
-    LDX $02BF
-    DEX
-F3EE:
-    STX $54
-F3F0:
-    JMP $F90C
-
-F3F3:
-    INC $54
-    LDA $54
-    CMP $02BF
-    BCC $F3F0
-    LDX #$00
-    BEQ $F3EE
-
-F400:
-    DEC $55
-    LDA $55
-    BMI $F40A
-    CMP $52
-    BCS $F40E
-F40A:
-    LDA $53
-F40C:
-    STA $55
-F40E:
-    JMP $F88E
-
-F411:
-    INC $55
-    LDA $55
-    CMP $53
-    BCC $F40E
-    BEQ $F40E
-    LDA $52
-    JMP $F40C
-
-F420:
-    JSR $F9A6
-    LDY $64
-    LDA #$00
-    STA $64
-    STA ($64),Y
-    INY
-    BNE $F429
-    INC $65
-F429:
-    LDX $65
-    CPX $6A
-    BCC $F429
-    LDA #$FF
-F438:
-    STA $02B2,Y
-    INY
-    CPY #$04
-    BCC $F438
-
-F440:
-    JSR $F997
-    STA $63
-    STA $6D
-    LDA #$00
-    STA $54
-    STA $56
-    STA $6C
-    RTS
-
-F450:
-    LDA $63
-    CMP $52
-    BEQ $F477
-    LDA $55
-    CMP $52
-    BNE $F45F
-    JSR $F923
-F45F:
-    JSR $F400
-    LDA $55
-    CMP $53
-    BNE $F46F
-    LDA $54
-    BEQ $F46F
-    JSR $F3E6
-F46F:
-    LDA #$20
-    STA $02FB
-    JSR $F1CA
-F477:
-    JMP $F88E
-
-F47A:
-    JSR $F411
-    LDA $55
-    CMP $52
-    BNE $F48B
-    JSR $F665
-    JSR $F758
-    BCS $F492
-F48B:
-    LDA $63
-    JSR $F75D
-    BCC $F47A
-F492:
-    JMP $F88E
-
-F495:
-    LDA $63
-    JMP $F73E
-
-F49A:
-    LDA $63
-    JMP $F74A
-
-F49F:
-    JSR $F94C
-    JSR $F18F
-    STA $7D
-    LDA #$00
-    STA $02BB
-F4AC:
-    JSR $F1E9
-    LDA $63
-    PHA
-    JSR $F612
-    PLA
-    CMP $63
-    BCS $F4C6
-    LDA $7D
-    PHA
-    JSR $F18F
-    STA $7D
-    PLA
-    JMP $F4AC
-
-F4C6:
-    JSR $F957
-    DEC $02BB
-    BMI $F4D2
-    DEC $54
-    BNE $F4C9
-F4D2:
-    JMP $F88E
-
-F4D5:
-    JSR $F94C
-F4D8:
-    JSR $F5AC
-    LDA $64
-    STA $68
-    LDA $65
-    STA $69
-    LDA $63
-    PHA
-    JSR $F60A
-    PLA
-    CMP $63
-    BCS $F4FE
-    LDA $54
-    CMP $02BF
-    BCS $F4FE
-    JSR $F18F
-    LDY #$00
-    STA ($68),Y
-    BEQ $F4D8
-F4FE:
-    LDY #$00
-    TYA
-    STA ($68),Y
-    JSR $F918
-    JSR $F957
-    JMP $F88E
-
-F50C:
-    SEC
-    JSR $F7C2
-    LDA $52
-    STA $55
-    JSR $F5AC
-    JSR $F78E
-    JSR $F7E2
-    JMP $F88E
-
-F520:
-    JSR $F88E
-    LDY $51
-    STY $54
-F527:
-    LDY $54
-F529:
-    TYA
-    SEC
-    JSR $F75B
-    PHP
-    TYA
-    CLC
-    ADC #$78
-    PLP
-    JSR $F73C
-    INY
-    CPY #$18
-    BNE $F529
-    LDA $02B4
-    ORA #$01
-    STA $02B4
-    LDA #$00
-    STA $55
-    JSR $F5AC
-    JSR $F82A
-    JSR $F758
-    BCC $F527
-    JMP $F41B
-
-F556:
-    LDY #$20
-    JSR $F983
-    DEY
-    BPL $F558
-    RTS
-
-F55F:
-    JSR $F440
-    JMP $F3E6
-
-F565:
-    LDA #$02
-    BNE $F57A
-
-F569:
-    LDY $026E
-    BEQ $F570
-    ORA #$20
-
-F570:
-    LDY $4C
-    BMI $F59F
-    LDY #$00
-    STA ($64),Y
-    LDA #$01
-
-F57A:
-    STA $029E
-    LDA $4C
-    BMI $F59F
-    LDA $64
-    SEC
-    SBC $029E
-    STA $64
-    BCS $F58D
-    DEC $65
-F58D:
-    LDA $0F
-    CMP $65
-    BCC $F59F
-    BNE $F59B
-    LDA $0E
-    CMP $64
-    BCC $F59F
-F59B:
-    LDA #$93
-    STA $4C
-F59F:
-    RTS
-
-F5A0:
-    LDA #$02
-    JSR $F570
-    LDA #$A2
-    JSR $F570
-    DEX
-    RTS
-
-F5AC:
-    LDX #$01
-    STX $66
-    DEX
-    STX $65
-    LDA $54
-    ASL A
-    ROL $65
-    ASL A
-    ROL $65
-    ADC $54
-    STA $64
-    BCC $F5C3
-    INC $65
-F5C3:
-    LDY $57
-    LDX $EE6D,Y
-    ASL $64
-    ROL $65
-    DEX
-    BNE $F5C8
-    LDA $56
-    LSR A
-    LDA $55
-    LDX $EE9D,Y
-    BEQ $F5DF
-    ROR A
-    ASL $66
-    DEX
-    BNE $F5D9
-F5DF:
-    ADC $64
-    BCC $F5E5
-    INC $65
-F5E5:
-    CLC
-    ADC $58
-    STA $64
-    STA $5E
-    LDA $65
-    ADC $59
-    STA $65
-    STA $5F
-    LDX $EE9D,Y
-    LDA $FB04,X
-    AND $55
-    ADC $66
-    TAY
-    LDA $EEAC,Y
-    STA $02A0
-    STA $6F
-    LDY #$00
-F609:
-    RTS
-
-F60A:
-    LDA #$00
-    BEQ $F610
-    LDA #$9B
-F610:
-    STA $7D
-    INC $63
-    INC $55
-    BNE $F61A
-    INC $56
-F61A:
-    LDA $55
-    LDX $57
-    CMP $EE7D,X
-    BEQ $F62D
-    CPX #$00
-    BNE $F609
-    CMP $53
-    BEQ $F609
-    BCC $F609
-F62D:
-    CPX #$08
-    BNE $F635
-    LDA $56
-    BEQ $F609
-F635:
-    LDA $57
-    BNE $F665
-    LDA $63
-    CMP #$51
-    BCC $F649
-    LDA $7D
-    BEQ $F665
-    JSR $F661
-    JMP $F6AB
-F649:
-    JSR $F665
-    LDA $54
-    CLC
-    ADC #$78
-    JSR $F75D
-    BCC $F65E
-    LDA $7D
-    BEQ $F65E
-    CLC
-    JSR $F50D
-F65E:
-    JMP $F88E
-
-F661:
-    LDA #$9B
-    STA $7D
-F665:
-    JSR $F997
-    LDA #$00
-    STA $56
-    INC $54
-    LDX $57
-    LDY #$18
-    BIT $7B
-    BPL $F67B
-    LDY #$04
-    TYA
-    BNE $F67E
-F67B:
-    LDA $EE8D,X
-F67E:
-    CMP $54
-    BNE $F6AB
-    STY $029D
-    TXA
-    BNE $F6AB
-    LDA $7D
-    BEQ $F6AB
-    CMP #$9B
-    BEQ $F691
-    CLC
-F691:
-    JSR $F7F7
-    INC $02BB
-    DEC $6C
-    BPL $F69D
-    INC $6C
-F69D:
-    DEC $029D
-    LDA $02B2
-    SEC
-    BPL $F691
-    LDA $029D
-    STA $54
-F6AB:
-    JMP $F88E
-
-F6AE:
-    SEC
-    LDA $70,X
-    SBC $74
-    STA $70,X
-    LDA $71,X
-    SBC $75
-    STA $71,X
-    RTS
-
-F6BC:
-    LDA $02BF
-    CMP #$04
-    BEQ $F6CA
-    LDA $57
-    BEQ $F6CA
-    JSR $EF94
-F6CA:
-    LDA #$27
-    CMP $53
-    BCS $F6D2
-    STA $53
-F6D2:
-    LDX $57
-    LDA $EE8D,X
-    CMP $54
-    BCC $F705
-    BEQ $F705
-    CPX #$08
-    BNE $F6EB
-    LDA $56
-    BEQ $F6F8
-    CMP #$01
-    BNE $F705
-    BEQ $F6EF
-F6EB:
-    LDA $56
-    BNE $F705
-F6EF:
-    LDA $EE7D,X
-    CMP $55
-    BCC $F705
-    BEQ $F705
-F6F8:
-    LDA #$01
-    STA $4C
-    LDA #$80
-    LDX $11
-    STA $11
-    BEQ $F70A
-    RTS
-F705:
-    JSR $F440
-    LDA #$8D
-F70A:
-    STA $4C
-    PLA
-    PLA
-    LDA $7B
-    BPL $F715
-    JMP $F962
-F715:
-    JMP $F21E
-
-F718:
-    LDY #$00
-    LDA $5F
-    BEQ $F722
-    LDA $5D
-    STA ($5E),Y
-F722:
-    RTS
-
-F723:
-    PHA
-    AND #$07
-    TAX
-    LDA $EEB4,X
-    STA $6E
-    PLA
-    LSR A
-    LSR A
-    LSR A
-    TAX
-    RTS
-
-F732:
-    ROL $02B4
-    ROL $02B3
-    ROL $02B2
-    RTS
-
-F73C:
-    BCC $F74A
-    JSR $F723
-    LDA $02A3,X
-    ORA $6E
-    STA $02A3,X
-    RTS
-F74A:
-    JSR $F723
-    LDA $6E
-    EOR #$FF
-    AND $02A3,X
-    STA $02A3,X
-    RTS
-
-F758:
-    LDA $54
-F75A:
-    CLC
-    ADC #$78
-F75D:
-    JSR $F723
-    CLC
-    LDA $02A3,X
-    AND $6E
-    BEQ $F769
-    SEC
-F769:
-    RTS
-
-F76A:
-    LDA $02FA
-    LDY $57
-    CPY #$0E
-    BCS $F78A
-    CPY #$0C
-    BCS $F77B
-    CPY #$03
-    BCS $F78A
-F77B:
-    ROL A
-    ROL A
-    ROL A
-    ROL A
-    AND #$03
-    TAX
-    LDA $02FA
-    AND #$9F
-    ORA $FB4D,X
-F78A:
-    STA $02FB
-    RTS
-
-F78E:
-    LDX $6A
-    DEX
-    STX $69
-    STX $67
-    LDA #$B0
-    STA $68
-    LDA #$D8
-    STA $66
-    LDX $54
-F79F:
-    INX
-    CPX $02BF
-    BEQ $F78D
-    LDY #$27
-F7A7:
-    LDA ($68),Y
-    STA ($66),Y
-    DEY
-    BPL $F7A7
-    SEC
-    LDA $68
-    STA $66
-    SBC #$28
-    STA $68
-    LDA $69
-    STA $67
-    SBC #$00
-    STA $69
-    JMP $F79F
-
-F7C2:
-    PHP
-    LDY #$16
-F7C5:
-    TYA
-    JSR $F75A
-    PHP
-    TYA
-    CLC
-    ADC #$79
-    PLP
-    JSR $F73C
-    DEY
-    BMI $F7D9
-    CPY $54
-    BCS $F7C5
-F7D9:
-    LDA $54
-    CLC
-    ADC #$78
-    PLP
-    JMP $F73C
-
-F7E2:
-    LDA $52
-    STA $55
-    JSR $F5AC
-    SEC
-    LDA $53
-    SBC $52
-    TAY
-    LDA #$00
-    STA ($64),Y
-    DEY
-    BPL $F7F1
-    RTS
-
-F7F7:
-    JSR $F732
-    LDA $026E
-    BEQ $F827
-F7FF:
-    LDA $026C
-    BNE $F7FF
-    LDA #$08
-    STA $026C
-F809:
-    LDA $026C
-    CMP #$01
-    BNE $F809
-F810:
-    LDA $D40B
-    CMP #$40
-    BCS $F810
-    LDX #$0D
-    LDA $02BF
-    CMP #$04
-    BNE $F822
-    LDX #$70
-F822:
-    CPX $D40B
-    BCS $F822
-F827:
-    JSR $F9A6
-    LDA $64
-    LDX $65
-    INX
-    CPX $6A
-    BEQ $F839
-    SEC
-    SBC #$10
-    JMP $F82E
-F839:
-    ADC #$27
-    BNE $F847
-    LDX $65
-    INX
-    CPX $6A
-    BEQ $F87C
-    CLC
-    ADC #$10
-F847:
-    TAY
-    STA $7E
-    SEC
-    LDA $64
-    SBC $7E
-    STA $64
-    BCS $F855
-    DEC $65
-F855:
-    LDA $64
-    CLC
-    ADC #$28
-    STA $7E
-    LDA $65
-    ADC #$00
-    STA $7F
-    LDA ($7E),Y
-    STA ($64),Y
-    INY
-    BNE $F862
-    LDY #$10
-    LDA $64
-    CMP #$D8
-    BEQ $F87C
-    CLC
-    ADC #$F0
-    STA $64
-    BCC $F855
-    INC $65
-    BNE $F855
-F87C:
-    LDX $6A
-    DEX
-    STX $7F
-    LDX #$D8
-    STX $7E
-    LDA #$00
-    LDY #$27
-    STA ($7E),Y
-    DEY
-    BPL $F889
-
-F88E:
-    LDA #$00
-    STA $63
-    LDA $54
-    STA $51
-F896:
-    LDA $51
-    JSR $F75A
-    BCS $F8A9
-    LDA $63
-    ADC #$28
-    STA $63
-    DEC $51
-    JMP $F896
-F8A9:
-    CLC
-    LDA $63
-    ADC $55
-    STA $63
-    RTS
-
-F8B1:
-    JSR $F94C
-    LDA $63
-    PHA
-    LDA $6C
-    STA $54
-    LDA $6D
-    STA $55
-    LDA #$01
-    STA $6B
-    LDX #$17
-    LDA $7B
-    BPL $F8CB
-    LDX #$03
-F8CB:
-    CPX $54
-    BNE $F8DA
-    LDA $55
-    CMP $53
-    BNE $F8DA
-    INC $6B
-    JMP $F8EA
-F8DA:
-    JSR $F60A
-    INC $6B
-    LDA $63
-    CMP $52
-    BNE $F8C3
-    DEC $54
-    JSR $F400
-F8EA:
-    JSR $F18F
-    BNE $F906
-    DEC $6B
-    LDA $63
-    CMP $52
-    BEQ $F906
-    JSR $F400
-    LDA $55
-    CMP $53
-    BNE $F902
-    DEC $54
-F902:
-    LDA $6B
-    BNE $F8EA
-F906:
-    PLA
-    STA $63
-    JMP $F957
-
-F90C:
-    JSR $F88E
-    LDA $51
-    STA $6C
-    LDA $52
-    STA $6D
-    RTS
-
-F918:
-    LDA $63
-    CMP $52
-    BNE $F920
-    DEC $54
-F920:
-    JSR $F88E
-
-F923:
-    LDA $63
-    CMP $52
-    BEQ $F917
-    JSR $F5AC
-    LDA $53
-    SEC
-    SBC $52
-    TAY
-    LDA ($64),Y
-
-F93C:
-    LDX #$2D
-F93E:
-    LDA $FB0D,X
-    CMP $02FB
-    BEQ $F94B
-    DEX
-    DEX
-    DEX
-    BPL $F93E
-F94B:
-    RTS
-
-F94C:
-    LDX #$02
-F94E:
-    LDA $54,X
-    STA $02B8,X
-    DEX
-    BPL $F94E
-    RTS
-
-F957:
-    LDX #$02
-F959:
-    LDA $02B8,X
-    STA $54,X
-    DEX
-    BPL $F959
-    RTS
-
-F962:
-    LDA $02BF
-    CMP #$18
-    BEQ $F980
-    LDX #$0B
-F96B:
-    LDA $54,X
-    PHA
-    LDA $0290,X
-    STA $54,X
-    PLA
-    STA $0290,X
-    DEX
-    BPL $F96B
-    LDA $7B
-    EOR #$FF
-    STA $7B
-F980:
-    JMP $F21E
-
-F983:
-    LDX #$7E
-F985:
-    PHA
-    STX $D01F
-    LDA $D40B
-F98C:
-    CMP $D40B
-    BEQ $F98C
-    DEX
-    DEX
-    BPL $F986
-    PLA
-    RTS
-
-F997:
-    LDA #$00
-    LDX $7B
-    BNE $F9A1
-    LDX $57
-    BNE $F9A3
-F9A1:
-    LDA $52
-F9A3:
-    STA $55
-    RTS
-
-F9A6:
-    LDA $58
-    STA $64
-    LDA $59
-    STA $65
-    RTS
-
-.ORG $F9AF
-
-F9AF:
-    LDX #$00
-    LDA $22
-    CMP #$11
-    BEQ $F9BF
-    CMP #$12
-    BEQ $F9BE
-    LDY #$84
-    RTS
-F9BE:
-    INX
-F9BF:
-    STX $02B7
-    LDA $54
-    STA $02F5
-    LDA $55
-    STA $02F6
-    LDA $56
-    STA $02F7
-    LDA #$01
-    STA $02F8
-    STA $02F9
-    SEC
-    LDA $02F5
-    SBC $5A
-    STA $76
-    BCS $F9F1
-    LDA #$FF
-    STA $02F8
-    LDA $76
-    EOR #$FF
-    CLC
-    ADC #$01
-    STA $76
-F9F1:
-    SEC
-    LDA $02F6
-    SBC $5B
-    STA $77
-    LDA $02F7
-    SBC $5C
-    STA $78
-    BCS $FA19
-    LDA #$FF
-    STA $02F9
-    LDA $77
-    EOR #$FF
-    STA $77
-    LDA $78
-    EOR #$FF
-    STA $78
-    INC $77
-    BNE $FA19
-    INC $78
-FA19:
-    LDX #$02
-    LDY #$00
-    STY $73
-    TYA
-    STA $70,X
-    LDA $5A,X
-    STA $54,X
-    DEX
-    BPL $FA1F
-    LDA $77
-    INX
-    TAY
-    LDA $78
-    STA $7F
-    STA $75
-    BNE $FA40
-    LDA $77
-    CMP $76
-    BCS $FA40
-    LDA $76
-    LDX #$02
-    TAY
-FA40:
-    TYA
-    STA $7E
-    STA $74
-    PHA
-    LDA $75
-    LSR A
-    PLA
-    ROR A
-    STA $70,X
-    LDA $7E
-    ORA $7F
-    BNE $FA56
-    JMP $FB01
-FA56:
-    CLC
-    LDA $70
-    ADC $76
-    STA $70
-    BCC $FA61
-    INC $71
-FA61:
-    LDA $71
-    CMP $75
-    BCC $FA7C
-    BNE $FA6F
-    LDA $70
-    CMP $74
-    BCC $FA7C
-FA6F:
-    CLC
-    LDA $54
-    ADC $02F8
-    STA $54
-    LDX #$00
-    JSR $F6AE
-FA7C:
-    CLC
-    LDA $72
-    ADC $77
-    STA $72
-    LDA $73
-    ADC $78
-    STA $73
-    CMP $75
-    BCC $FAB5
-    BNE $FA95
-    LDA $72
-    CMP $74
-    BCC $FAB5
-FA95:
-    BIT $02F9
-    BPL $FAAA
-    DEC $55
-    LDA $55
-    CMP #$FF
-    BNE $FAB0
-    LDA $56
-    BEQ $FAB0
-    DEC $56
-    BPL $FAB0
-FAAA:
-    INC $55
-    BNE $FAB0
-    INC $56
-FAB0:
-    LDX #$02
-    JSR $F6AE
-FAB5:
-    JSR $F6CA
-    JSR $F1CA
-    LDA $02B7
-    BEQ $FAEF
-    JSR $F94C
-    LDA $02FB
-    STA $02BC
-    LDA $54
-    PHA
-    JSR $F612
-    PLA
-    STA $54
-    JSR $F6CA
-    JSR $F18F
-    BNE $FAE6
-    LDA $02FD
-    STA $02FB
-    JSR $F1CA
-    JMP $FAC9
-FAE6:
-    LDA $02BC
-    STA $02FB
-    JSR $F957
-FAEF:
-    SEC
-    LDA $7E
-    SBC #$01
-    STA $7E
-    LDA $7F
-    SBC #$00
-    STA $7F
-    BMI $FB01
-    JMP $FA4D
-
-FB01:
-    JMP $F21E
-
-; -----------------------------------------------------------------------------
-; Upper-bank tables and lookup data
-; -----------------------------------------------------------------------------
-
-.ORG $FB04
-
-FB04Table:
-    .BYTE $00, $01, $03, $07, $28, $CA, $94, $46, $00, $1B, $E0, $F3, $1C, $E6, $F3, $1D
-    .BYTE $F3, $F3, $1E, $00, $F4, $1F, $11, $F4, $7D, $20, $F4, $7E, $50, $F4, $7F, $7A
-    .BYTE $F4, $9B, $61, $F6, $9C, $20, $F5, $9D, $0C, $F5, $9E, $9A, $F4, $9F, $95, $F4
-    .BYTE $FD, $56, $F5, $FE, $D5, $F4, $FF, $9F, $F4, $1C, $40, $F4
-
-.ORG $FB40
-
-FB40Lookup:
-    .BYTE $1D, $5F, $F5, $1E, $1B, $F4, $1F, $0A, $F4, $40, $00, $20, $60, $20, $40, $00
-    .BYTE $60, $6C, $6A, $3B, $8A, $8B, $6B, $2B, $2A, $6F, $80, $70, $75, $9B, $69, $2D
-    .BYTE $3D, $76, $80, $63, $8C, $8D, $62, $78, $7A, $34, $80, $33, $36, $1B, $35, $32
-    .BYTE $31, $2C, $20, $2E, $6E, $80, $6D, $2F, $81, $72, $80, $65, $79, $7F, $74, $77
-    .BYTE $71, $39, $80, $30, $37, $7E, $38, $3C, $3E, $66, $68, $64, $80, $82, $67, $73
-    .BYTE $61, $4C, $4A, $3A, $8A, $8B, $4B, $5C, $5E, $4F, $80, $50, $55, $9B, $49, $5F
-    .BYTE $7C, $56, $80, $43, $8C, $8D, $42, $58, $5A, $24, $80, $23, $26, $1B, $25, $22
-    .BYTE $21, $5B, $20, $5D, $4E, $80, $4D, $3F, $81, $52, $80, $45, $59, $9F, $54, $57
-    .BYTE $51, $28, $80, $29, $27, $9C, $40, $7D, $9D, $46, $48, $44, $80, $83, $47, $53
-    .BYTE $41, $0C, $0A, $7B, $80, $80, $0B, $1E, $1F, $0F, $80, $10, $15, $9B, $09, $1C
-    .BYTE $1D, $16, $80, $03, $89, $80, $02, $18, $1A, $80, $80, $85, $80, $1B, $80, $FD
-    .BYTE $80, $00, $20, $60, $0E, $80, $0D, $80, $81, $12, $80, $05, $19, $9E, $14, $17
-
-.ORG $FC00
-
-FC00:
-    ORA ($80),Y
-    DOP #$80
-    DOP #$FE
-    DOP #$7D
-    ISC $0806,X
-    DOP $80
-    STY $07
-    SLO ($01),Y
-    TOP $1E1D,X
-    SLO $8F8E,X
-    BCC $FBAA
-    TXA
-    PHA
-    TYA
-    PHA
-    LDY $D301
-    LDA $D209
-    CMP $02F2
-    BNE $FC2D
-    LDX $02F1
-    BNE $FC76
-FC2D:
-    LDX $026D
-    CMP #$83
-    BNE $FC47
-    TXA
-    EOR #$FF
-    STA $026D
-    BNE $FC41
-    TYA
-    ORA #$04
-    BNE $FC44
-FC41:
-    TYA
-    AND #$FB
-FC44:
-    TAY
-    BCS $FC6D
-FC47:
-    TXA
-    BNE $FC87
-    LDA $D209
-    TAX
-    CMP #$9F
-    BNE $FC5C
-    LDA $02FF
-    EOR #$FF
-    STA $02FF
-    BCS $FC6D
-FC5C:
-    AND #$3F
-    CMP #$11
-    BNE $FC90
-    STX $02DC
-    BEQ $FC6D
-    STX $02FC
-    STX $02F2
-    LDA #$03
-    STA $02F1
-    LDA #$00
-    STA $4D
-    LDA $02D9
-    STA $022B
-    LDA $022F
-    BNE $FC87
-    LDA $02DD
-    STA $022F
-FC87:
-    STY $D301
-    PLA
-    TAY
-    PLA
-    TAX
-    PLA
-    RTI
-
-FC90:
-    CPX #$84
-    BEQ $FCB5
-    CPX #$94
-    BNE $FC67
-    LDA $02F4
-    LDX $026B
-    STA $026B
-    STX $02F4
-    CPX #$CC
-    BEQ $FCAE
-    TYA
-    ORA #$08
-    TAY
-    BNE $FC6D
-FCAE:
-    TYA
-    AND #$F7
-    TAY
-    JMP $FC6D
-
-FCB5:
-    LDA $022F
-    BEQ $FC87
-    STA $02DD
-    LDA #$00
-    STA $022F
-    BEQ $FC87
-FCB9:
-    PHA
-    LDA $02C6
-    EOR $004F
-    AND $004E
-    STA $D40A
-    STA $D017
-    PLA
-    RTI
-
-FCD6:
-    BRK
-    BRK
-    JMP $F983
-    LDA #$CC
-    STA $02EE
-    LDA #$05
-    STA $02EF
-    RTS
-
-FCE6:
-    LDA $2B
-    STA $3E
-    LDA $2A
-    AND #$0C
-    CMP #$04
-    BEQ $FCF7
-    CMP #$08
-    BEQ $FD34
-    RTS
-
-FCF7:
-    LDA #$00
-    STA $0289
-    STA $3F
-    LDA #$01
-    JSR $FDFC
-    BMI $FD2E
-    LDA #$34
-    STA $D302
-    LDX $62
-    LDY $FE93,X
-    LDA $FE91,X
-    TAX
-    LDA #$03
-    STA $022A
-    JSR $E45C
-    LDA $022A
-    BNE $FD1B
-    LDA #$80
-    STA $3D
-    STA $028A
-    JMP $FD77
-FD2A:
-    LDY #$80
-    DEC $11
-FD2E:
-    LDA #$00
-    STA $0289
-    RTS
-
-FD34:
-    LDA #$80
-    STA $0289
-    LDA #$02
-    JSR $FDFC
-    BMI $FD2E
-    LDA #$CC
-    STA $D204
-    LDA #$05
-    STA $D206
-    LDA #$60
-    STA $0300
-    JSR $E468
-    LDA #$34
-    STA $D302
-    LDX $62
-    LDY $FE8F,X
-    LDA $FE8D,X
-    TAX
-    LDA #$03
-    JSR $E45C
-    LDA #$FF
-    STA $022A
-    LDA $11
-    BEQ $FD2A
-    LDA $022A
-    BNE $FD6A
-    LDA #$00
-    STA $3D
-FD77:
-    LDY #$01
-    RTS
-
-FD7A:
-    LDA $3F
-    BMI $FDB1
-    LDX $3D
-    CPX $028A
-    BEQ $FD8D
-    LDA $0400,X
-    INC $3D
-    LDY #$01
-    RTS
-FD8D:
-    LDA #$52
-    JSR $FE3F
-    TYA
-    BMI $FD8C
-    LDA #$00
-    STA $3D
-    LDX #$80
-    LDA $03FF
-    CMP #$FE
-    BEQ $FDAF
-    CMP #$FA
-    BNE $FDA9
-    LDX $047F
-FDA9:
-    STX $028A
-    JMP $FD7A
-FDAF:
-    DEC $3F
-FDB1:
-    LDY #$88
-    RTS
-
-FDFC:
-    STA $40
-    LDA $14
-    CLC
-    LDX $62
-    ADC $FE95,X
-    TAX
-    LDA #$FF
-    STA $D01F
-    LDA #$00
-FE10:
-    LDY #$F0
-FE10Loop:
-    DEY
-    BNE FE10Loop
-    STA $D01F
-    LDY #$F0
-FE18Loop:
-    DEY
-    BNE FE18Loop
-    CPX $14
-    BNE $FE07
-    DEC $40
-    BEQ $FE31
-    TXA
-    CLC
-    LDX $62
-    ADC $FE97,X
-    TAX
-    CPX $14
-    BNE $FE2B
-    BEQ $FDFE
-FE31:
-    JSR $FE36
-    TYA
-    RTS
-
-FE36:
-    LDA $E425
-    PHA
-    LDA $E424
-    PHA
-    RTS
-
-FE3F:
-    STA $0302
-    LDA #$00
-    STA $0309
-    LDA #$83
-    STA $0308
-    LDA #$03
-    STA $0305
-    LDA #$FD
-    STA $0304
-    LDA #$60
-    STA $0300
-    LDA #$00
-    STA $0301
-    LDA #$23
-    STA $0306
-    LDA $0302
-    LDY #$40
-    CMP #$52
-    BEQ $FE70
-    LDY #$80
-FE70:
-    STY $0303
-    LDA $3E
-    STA $030B
-    JSR $E459
-    RTS
-
-FE7C:
-    STA $03FF
-    LDA #$55
-    STA $03FD
-    STA $03FE
-    LDA #$57
-    JSR $FE3F
-    RTS
-
-.ORG $FE8D
-
-FE8DTable:
-    .BYTE $04, $03, $80, $C0, $02, $01, $40, $E0
-
-.ORG $FE95
-
-FE95:
-    ASL $0A19,X
-    PHP
-    LDA #$1E
-    STA $0314
-    RTS
-    NOP
-    .BYTE $02
-    CPY #$03
-    LDA #$04
-    STA $02DF
-    LDX $FE9F
-    LDY $FEA0
-    LDA #$53
-    STA $0302
-    STA $030A
-    JSR $FF14
-    JSR $E459
-    BMI $FEC1
-    JSR $FF44
-    RTS
-    JSR $FEA3
-    LDA #$00
-    STA $02DE
-    RTS
-
-FECB:
-    PHA
-    LDA $0341,X
-    STA $21
-    JSR $FF4B
-    LDX $02DE
-    PLA
-    STA $03C0,X
-    INX
-    CPX $02DF
-    BEQ $FEF6
-    STX $02DE
-    CMP #$9B
-    BEQ $FEEB
-    LDY #$01
-    RTS
-
-FEEB:
-    LDA #$20
-    STA $03C0,X
-    INX
-    CPX $02DF
-    BNE $FEED
-
-FEF6:
-    LDA #$00
-    STA $02DE
-    LDX $FEA1
-    LDY $FEA2
-    JSR $FF14
-    JMP $E459
-
-FF07:
-    JSR $FF4B
-    LDA #$9B
-    LDX $02DE
-    BNE $FEED
-    LDY #$01
-    RTS
-
-FF14:
-    STX $0304
-    STY $0305
-    LDA #$40
-    STA $0300
-    LDA $21
-    STA $0301
-    LDA #$80
-    LDX $0302
-    CPX #$53
-    BNE $FF2F
-    LDA #$40
-FF2F:
-    STA $0303
-    LDA $02DF
-    STA $0308
-    LDA #$00
-    STA $0309
-    LDA $0314
-    STA $0306
-    RTS
-
-FF44:
-    LDA $02EC
-    STA $0314
-    RTS
-
-FF4B:
-    LDY #$57
-    LDA $2B
-    CMP #$4E
-    BNE $FF57
-    LDX #$28
-    BNE $FF65
-FF57:
-    CMP #$44
-    BNE $FF5F
-    LDX #$14
-    BNE $FF65
-FF5F:
-    CMP #$53
-    BNE $FF6F
-    LDX #$1D
-FF65:
-    STX $02DF
-    STY $0302
-    STA $030A
-    RTS
-
-FF6F:
-    LDA #$4E
-    BNE $FF4F
-
-.ORG $FF73
-
-FF73: ; CKROM1
-    LDX #$00
-    STX $8B
-    STX $8C
-FF79:
-    JSR $FFA9
-    CPX #$0C
-    BNE FF79
-    LDA $C000
-    LDX $C001
-FF86:
-    CMP $8B
-    BNE FF90
-    CPX $8C
-    BNE FF90
-    CLC
-    RTS
-FF90:
-    SEC
-    RTS
-
-FF92: ; CKROM2
-    LDX #$00
-    STX $8B
-    STX $8C
-    LDX #$0C
-    JSR $FFA9
-    JSR $FFA9
-    LDA $FFF8
-    LDX $FFF9
-    JMP FF86
-
-.ORG $FFA9
-
-FFA9: ; GETCKS
-    LDY #$00
-FFAB:
-    LDA $FFD7,X
-    STA $9E,Y
-    INX
-    INY
-    CPY #$04
-    BNE FFAB
-    LDY #$00
-FFB9:
-    CLC
-    LDA ($9E),Y
-    ADC $8B
-    STA $8B
-    BCC FFC4
-    INC $8C
-FFC4:
-    INC $9E
-    BNE FFCA
-    INC $9F
-FFCA:
-    LDA $9E
-    CMP $A0
-    BNE FFB9
-    LDA $9F
-    CMP $A1
-    BNE FFB9
-    RTS
-
-.ORG $FFD7
-
-CKSTAB:
-    .WORD $C002, $D000, $5000, $5800, $D800, $E000, $E000, $FFF8, $FFFA, $0000
-
-.ORG $FFF8
-
-CHSRO2:
-    .WORD $6C8C
-
-.ORG $FFFA
-
-FFFAVectors:
-    .WORD $C018, $C2AA, $C02C
-
-; Remaining verification work is in the earlier recovered gameplay blocks.
-
-; -----------------------------------------------------------------------------
-; Original XEX data / graphics / lookup segments
-; -----------------------------------------------------------------------------
-
 .ORG $2020
 
 XEX_2020_000:
@@ -7736,5 +4193,3548 @@ TitleHelperChain:
     .BYTE $4B, $69, $00, $8D, $13, $03, $6C, $12, $03, $4C, $72, $C2, $20, $5D, $E8, $B0
     .BYTE $3B, $A8, $A5, $4A, $48, $A5, $4B, $48, $86, $4A, $84, $4B, $AD, $44, $02, $D0
     .BYTE $0F, $A0, $10, $18, $B1, $4A, $C8, $71, $4A, $D0, $1F, $20, $56, $CB, $D0, $1A
+.ORG $C000
+
+; Hardware interrupt dispatch table / config data ($C000-$C00B)
+C000_Data:
+    .BYTE $11, $92, $10, $05, $83, $00, $42, $42, $00, $00, $01, $02
+
+; Subroutine: enable ANTIC DMA, capture VCOUNT to $03FA
+C00C_InitDma:
+    LDA #$40
+    STA $D40E
+    LDA $D013
+    STA $03FA
+    RTS
+
+; NMI dispatcher: routes VBI vs DLI
+NMI_Handler:
+    BIT $D40F
+    BPL DLI_Handler
+    JMP ($0200)
+
+; DLI handler: save registers, clear NMIST, dispatch via $0222
+DLI_Handler:
+    CLD
+    PHA
+    TXA
+    PHA
+    TYA
+    PHA
+    STA $D40F
+    JMP ($0222)
+
+; IRQ/BRK handler: clear decimal, dispatch via OS vector $0216
+IRQ_BRK_Handler:
+    CLD
+    JMP ($0216)
+
+; IRQ handler body ($C030-$C28F)
+C030_IrqBody:
+    .BYTE $48, $AD, $0E, $D2, $29, $20, $D0, $0D, $A9, $DF, $8D, $0E, $D2, $A5, $10, $8D
+    .BYTE $0E, $D2, $6C, $0A, $02, $8A, $48, $AD, $FF, $D1, $2D, $49, $02, $F0, $03, $6C
+    .BYTE $38, $02, $A2, $06, $BD, $CF, $C0, $E0, $05, $D0, $04, $25, $10, $F0, $05, $2C
+    .BYTE $0E, $D2, $F0, $06, $CA, $10, $ED, $4C, $A0, $C0, $49, $FF, $8D, $0E, $D2, $A5
+    .BYTE $10, $8D, $0E, $D2, $E0, $00, $D0, $05, $AD, $6D, $02, $D0, $23, $BD, $D7, $C0
+    .BYTE $AA, $BD, $00, $02, $8D, $8C, $02, $BD, $01, $02, $8D, $8D, $02, $68, $AA, $6C
+    .BYTE $8C, $02, $A9, $00, $85, $11, $8D, $FF, $02, $8D, $F0, $02, $85, $4D, $68, $40
+    .BYTE $68, $AA, $2C, $02, $D3, $10, $06, $AD, $00, $D3, $6C, $02, $02, $2C, $03, $D3
+    .BYTE $10, $06, $AD, $01, $D3, $6C, $04, $02, $68, $8D, $8C, $02, $68, $48, $29, $10
+    .BYTE $F0, $07, $AD, $8C, $02, $48, $6C, $06, $02, $AD, $8C, $02, $48, $68, $40, $80
+    .BYTE $40, $04, $02, $01, $08, $10, $20, $36, $08, $14, $12, $10, $0E, $0C, $0A, $4C
+    .BYTE $DF, $C0, $E6, $14, $D0, $08, $E6, $4D, $E6, $13, $D0, $02, $E6, $12, $A9, $FE
+    .BYTE $A2, $00, $A4, $4D, $10, $06, $85, $4D, $A6, $13, $A9, $F6, $85, $4E, $86, $4F
+    .BYTE $AD, $C5, $02, $45, $4F, $25, $4E, $8D, $17, $D0, $A2, $00, $20, $55, $C2, $D0
+    .BYTE $03, $20, $4F, $C2, $A5, $42, $D0, $08, $BA, $BD, $04, $01, $29, $04, $F0, $03
+    .BYTE $4C, $8A, $C2, $AD, $13, $D0, $CD, $FA, $03, $D0, $B4, $AD, $0D, $D4, $8D, $35
+    .BYTE $02, $AD, $0C, $D4, $8D, $34, $02, $AD, $31, $02, $8D, $03, $D4, $AD, $30, $02
+    .BYTE $8D, $02, $D4, $AD, $2F, $02, $8D, $00, $D4, $AD, $6F, $02, $8D, $1B, $D0, $AD
+    .BYTE $6C, $02, $F0, $0E, $CE, $6C, $02, $A9, $08, $38, $ED, $6C, $02, $29, $07, $8D
+    .BYTE $05, $D4, $A2, $08, $8E, $1F, $D0, $58, $BD, $C0, $02, $45, $4F, $25, $4E, $9D
+    .BYTE $12, $D0, $CA, $10, $F2, $AD, $F4, $02, $8D, $09, $D4, $AD, $F3, $02, $8D, $01
+    .BYTE $D4, $A2, $02, $20, $55, $C2, $D0, $03, $20, $52, $C2, $A2, $02, $E8, $E8, $BD
+    .BYTE $18, $02, $1D, $19, $02, $F0, $06, $20, $55, $C2, $9D, $26, $02, $E0, $08, $D0
+    .BYTE $EC, $AD, $0F, $D2, $29, $04, $F0, $08, $AD, $F1, $02, $F0, $03, $CE, $F1, $02
+    .BYTE $AD, $2B, $02, $F0, $3E, $AD, $0F, $D2, $29, $04, $D0, $32, $CE, $2B, $02, $D0
+    .BYTE $32, $AD, $6D, $02, $D0, $2D, $AD, $DA, $02, $8D, $2B, $02, $AD, $09, $D2, $C9
+    .BYTE $9F, $F0, $20, $C9, $83, $F0, $1C, $C9, $84, $F0, $18, $C9, $94, $F0, $14, $29
+    .BYTE $3F, $C9, $11, $F0, $0E, $AD, $09, $D2, $8D, $FC, $02, $4C, $F3, $C1, $A9, $00
+    .BYTE $8D, $2B, $02, $AD, $00, $D3, $4A, $4A, $4A, $4A, $8D, $79, $02, $8D, $7B, $02
+    .BYTE $AD, $00, $D3, $29, $0F, $8D, $78, $02, $8D, $7A, $02, $AD, $10, $D0, $8D, $84
+    .BYTE $02, $8D, $86, $02, $AD, $11, $D0, $8D, $85, $02, $8D, $87, $02, $A2, $03, $BD
+    .BYTE $00, $D2, $9D, $70, $02, $9D, $74, $02, $CA, $10, $F4, $8D, $0B, $D2, $A2, $02
+    .BYTE $A0, $01, $B9, $78, $02, $4A, $4A, $4A, $9D, $7D, $02, $9D, $81, $02, $A9, $00
+    .BYTE $2A, $9D, $7C, $02, $9D, $80, $02, $CA, $CA, $88, $10, $E6, $6C, $24, $02, $6C
+    .BYTE $26, $02, $6C, $28, $02, $BC, $18, $02, $D0, $08, $BC, $19, $02, $F0, $10, $DE
+    .BYTE $19, $02, $DE, $18, $02, $D0, $08, $BC, $19, $02, $D0, $03, $A9, $00, $60, $A9
+    .BYTE $FF, $60, $0A, $8D, $2D, $02, $8A, $A2, $05, $8D, $0A, $D4, $CA, $D0, $FD, $AE
+    .BYTE $2D, $02, $9D, $17, $02, $98, $9D, $16, $02, $60, $68, $A8, $68, $AA, $68, $40
+
+; -----------------------------------------------------------------------------
+; Upper-bank bootstrap stub and overflow area
+; -----------------------------------------------------------------------------
+
+; Spy vs Spy (Title Version)
+; Partial mnemonic-first disassembly scaffold.
+; Recovered bootstrap/runtime fragments are represented as code;
+; opaque tables remain as data until the surrounding routines are finished.
+;
+; jsA8E boot note:
+; this XEX needs PORTB=$FE at reset so OS/BASIC/FP ROMs are hidden while
+; the C290+ segments are loaded into RAM.
+
+; -----------------------------------------------------------------------------
+; Bootstrap / loader path
+; -----------------------------------------------------------------------------
+
+.ORG $C290
+
+BootEntry:
+    SEI
+    LDA $D013
+    CMP $03FA
+    BNE BootFail
+    ROR A
+    BCC BootCheckBasic
+    JSR $C4C9
+    BNE BootFail
+
+BootCheckBasic:
+    LDA $0244
+    BNE BootFail
+    LDA #$FF
+    BNE BootStart
+
+BootFail:
+    SEI
+    LDX #$8C
+
+BootDelay:
+    DEY
+    BNE BootDelay
+    DEX
+    BNE BootDelay
+    LDA $033D
+    CMP #$5C
+    BNE BootFailClear
+    LDA $033E
+    CMP #$93
+    BNE BootFailClear
+    LDA $033F
+    CMP #$25
+    BEQ BootEntry
+
+BootFailClear:
+    LDA #$00
+
+BootStart:
+    STA $08
+    SEI
+    CLD
+    LDX #$FF
+    TXS
+    JSR $C471
+    LDA #$01
+    STA $01
+    LDA $08
+    BNE BootAltPath
+
+    LDA #$00
+    LDY #$08
+    STA $04
+    STA $05
+
+BootProbeLoop:
+    LDA #$FF
+    STA ($04),Y
+    CMP ($04),Y
+    BEQ BootProbeZero
+    LSR $01
+
+BootProbeZero:
+    LDA #$00
+    STA ($04),Y
+    CMP ($04),Y
+    BEQ BootProbeNext
+    LSR $01
+
+BootProbeNext:
+    INY
+    BNE BootProbeLoop
+    INC $05
+    LDX $05
+    CPX $06
+    BNE BootProbeLoop
+    LDA #$23
+    STA $0A
+    LDA #$F2
+    STA $0B
+    LDA $D301
+    AND #$7F
+    STA $D301
+    JSR $FF73
+    BCS BootProbeSkip
+    JSR $FF92
+    BCC BootProbeDone
+
+BootProbeSkip:
+    LSR $01
+
+BootProbeDone:
+    LDA $D301
+    ORA #$80
+    STA $D301
+    LDA #$FF
+    STA $0244
+    BNE BootInitDisplay
+
+BootAltPath:
+    LDX #$00
+    LDA $03EC
+    BEQ BootClearState
+    STX $000E
+    STX $000F
+    TXA
+
+BootClearState:
+    STA $0200,X
+    CPX #$ED
+    BCS BootClearHigh
+    STA $0300,X
+
+BootClearHigh:
+    DEX
+    BNE BootClearState
+    LDX #$10
+
+BootClearShadow:
+    STA $00,X
+    INX
+    BPL BootClearShadow
+
+BootInitDisplay:
+    LDX #$00
+    LDA $D301
+    AND #$02
+    BEQ BootSelectMode
+    INX
+
+BootSelectMode:
+    STX $03F8
+    LDA #$5C
+    STA $033D
+    LDA #$93
+    STA $033E
+    LDA #$25
+    STA $033F
+    LDA #$02
+    STA $52
+    LDA #$27
+    STA $53
+    LDA $D014
+    AND #$0E
+    BNE BootModeHi
+
+    LDA #$05
+    LDX #$01
+    LDY #$28
+    BNE BootModeStore
+
+BootModeHi:
+    LDA #$06
+    LDX #$00
+    LDY #$30
+
+BootModeStore:
+    STA $02DA
+    STX $62
+    STY $02D9
+    LDX #$25
+
+BootCopyLoop1:
+    LDA $C44B,X
+    STA $0200,X
+    DEX
+    BPL BootCopyLoop1
+
+    LDX #$0E
+
+BootCopyLoop2:
+    LDA $C42E,X
+    STA $031A,X
+    DEX
+    BPL BootCopyLoop2
+
+    JSR $C535
+    CLI
+    LDA $01
+    BNE BootContinue
+    LDA $D301
+    AND #$7F
+    STA $D301
+    LDA #$02
+    STA $02F3
+    LDA #$E0
+    STA $02F4
+    JMP $5003
+
+BootContinue:
+    LDX #$00
+    STX $06
+    LDX $02E4
+    CPX #$B0
+    BCS BootDisplayDone
+    LDX $BFFC
+    BNE BootDisplayDone
+    INC $06
+    JSR $C4C9
+    JSR $C429
+
+BootDisplayDone:
+    LDA #$03
+    LDX #$00
+    STA $0342,X
+    LDA #$48
+    STA $0344,X
+    LDA #$C4
+    STA $0345,X
+    LDA #$0C
+    STA $034A,X
+    JSR $E456
+    BPL BootDelayExit
+    JMP $C2AA
+
+BootDelayExit:
+    INX
+    BNE BootDelayExit
+    INY
+    BPL BootDelayExit
+    JSR $C66E
+    LDA $06
+    BEQ BootAfterDelay
+    LDA $BFFD
+    ROR A
+    BCC BootAfterDelayCheck
+
+BootAfterDelay:
+    JSR $C58B
+    JSR $E739
+
+BootAfterDelayCheck:
+    LDA #$00
+    STA $0244
+    LDA $06
+    BEQ BootInitVbi
+    LDA $BFFD
+    AND #$04
+    BEQ BootInitVbi
+    JMP ($BFFA)
+
+BootInitVbi:
+    JMP ($000A)
+
+    JMP ($BFFE)
+
+    CLC
+    RTS
+
+; -----------------------------------------------------------------------------
+; Local bootstrap tables
+; -----------------------------------------------------------------------------
+
+.ORG $C42E
+
+BootTextAndVectors:
+    .BYTE $50, $30, $E4, $43, $40, $E4, $45, $00, $E4, $53, $10, $E4, $4B, $20, $E4, $42
+    .BYTE $4F, $4F, $54, $20, $45, $52, $52, $4F, $52, $9B, $45, $3A, $9B, $CE, $C0, $CD
+    .BYTE $C0, $CD, $C0, $CD, $C0, $19, $FC, $2C, $EB, $AD, $EA, $EC, $EA, $CD, $C0, $CD
+    .BYTE $C0, $CD, $C0, $30, $C0, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $E2
+
+; -----------------------------------------------------------------------------
+; Reset / display tail
+; -----------------------------------------------------------------------------
+
+.ORG $C471
+
+LoaderBootEntry:
+    LDA $D013
+    ROR A
+    BCC LoaderBootSkipCheck
+    LDA $BFFC
+    BNE LoaderBootSkipCheck
+    LDA $BFFD
+    BPL LoaderBootSkipCheck
+    JMP ($BFFE)
+
+LoaderBootSkipCheck:
+    JSR $C4DA
+    LDA $D301
+    ORA #$02
+    STA $D301
+    LDA $08
+    BEQ LoaderOptionClear
+    LDA $03F8
+    BNE LoaderOptionOnStart
+    BEQ LoaderOptionClear
+
+LoaderOptionClear:
+    LDA $D01F
+    AND #$04
+    BEQ LoaderOptionOnStart
+    LDA $D301
+    AND #$FD
+    STA $D301
+
+LoaderOptionOnStart:
+    LDA #$00
+    TAY
+    STA $05
+    LDA #$28
+    STA $06
+
+LoaderProbeLoop:
+    LDA ($05),Y
+    EOR #$FF
+    STA ($05),Y
+    CMP ($05),Y
+    BNE LoaderProbeDone
+    EOR #$FF
+    STA ($05),Y
+    CMP ($05),Y
+    BNE LoaderProbeDone
+    INC $06
+    BNE LoaderProbeLoop
+
+LoaderProbeDone:
+    RTS
+
+LoaderChecksumStart:
+    LDA #$00
+    TAX
+    CLC
+
+LoaderChecksumLoop:
+    ADC $BFF0,X
+    INX
+    BNE LoaderChecksumLoop
+    CMP $03EB
+    STA $03EB
+    RTS
+
+.ORG $C4DA
+
+ResetDisplayTail:
+    LDA #$00
+    TAX
+    STA $D303
+    STA $D000,X
+    STA $D400,X
+    STA $D200,X
+    CPX #$01
+    BEQ ResetDisplayNext
+    STA $D300,X
+
+ResetDisplayNext:
+    INX
+    BNE ResetDisplayTail
+    LDA #$3C
+    STA $D303
+    LDA #$FF
+    STA $D301
+    LDA #$38
+    STA $D302
+    STA $D303
+    LDA #$00
+    STA $D300
+    LDA #$FF
+    STA $D301
+    LDA #$3C
+    STA $D302
+    STA $D303
+    LDA $D301
+    LDA $D300
+    LDA #$22
+    STA $D20F
+    LDA #$A0
+    STA $D205
+    STA $D207
+    LDA #$28
+    STA $D208
+    LDA #$FF
+    STA $D20D
+    RTS
+
+; -----------------------------------------------------------------------------
+; Runtime setup helper
+; -----------------------------------------------------------------------------
+
+.ORG $C535
+
+RuntimeSetup:
+    DEC $11
+    LDA #$92
+    STA $0236
+    LDA #$C0
+    STA $0237
+    LDA $06
+    STA $02E4
+    STA $02E6
+    LDA #$00
+    STA $02E5
+    LDA #$00
+    STA $02E7
+    LDA #$07
+    STA $02E8
+    JSR $E40C
+    JSR $E41C
+    JSR $E42C
+    JSR $E43C
+    JSR $E44C
+    JSR $E46E
+    JSR $E465
+    JSR $E46B
+    JSR $E450
+    LDA #$6E
+    STA $0238
+    LDA #$C9
+    STA $0239
+    JSR $E49B
+    LDA $D01F
+    AND #$01
+    EOR #$01
+    STA $03E9
+    RTS
+
+BootMenuEntry:
+    LDA $08
+    BEQ BootMenuInit
+    LDA $09
+    AND #$01
+    BEQ BootMenuAbort
+    JMP $C63B
+
+BootMenuInit:
+    LDA #$01
+    STA $0301
+    LDA #$53
+    STA $0302
+    JSR $E453
+    BMI BootMenuAbort
+    LDA #$00
+    STA $030B
+
+BootMenuAbort:
+    JMP $C63B
+
+.ORG $C5C9
+
+MenuContinueCopy:
+    LDX #$03
+
+MenuCopyShadow:
+    LDA $0400,X
+    STA $0240,X
+    DEX
+    BPL MenuCopyShadow
+    LDA $0242
+    STA $04
+    LDA $0243
+    STA $05
+    LDA $0404
+    STA $0C
+    LDA $0405
+    STA $0D
+    LDY #$7F
+
+MenuCopyLoop:
+    LDA $0400,Y
+    STA ($04),Y
+    DEY
+    BPL MenuCopyLoop
+    CLC
+    LDA $04
+    ADC #$80
+    STA $04
+    LDA $05
+    ADC #$00
+    STA $05
+    DEC $0241
+    BEQ MenuCopyDone
+    INC $030A
+    JSR $C659
+    BPL MenuCopyLoop
+    JSR $C63E
+    LDA $03EA
+    BNE MenuCopyAbort
+    BEQ MenuCopyResume
+
+MenuCopyDone:
+    LDA $03EA
+    BEQ MenuInitPath
+    JSR $C659
+
+MenuInitPath:
+    JSR $C629
+    BCS MenuCopyAbort
+    JSR $C63B
+    INC $09
+    RTS
+
+MenuCopyResume:
+    LDA $03EA
+    BNE MenuCopyAbort
+    BEQ MenuContinuePath
+
+MenuCopyAbort:
+    RTS
+
+MenuContinuePath:
+    LDA $03EA
+    BEQ MenuContinueGo
+    JSR $C659
+
+MenuContinueGo:
+    JSR $C629
+    BCS MenuCopyAbort
+    JSR $C63B
+    INC $09
+    RTS
+
+MenuFinalize:
+    CLC
+    LDA $0242
+    ADC #$06
+    STA $04
+    LDA $0243
+    ADC #$00
+    STA $05
+    JMP ($0004)
+
+MenuAbortJump:
+    JMP ($000C)
+
+MenuSaveState:
+    LDX #$3D
+    LDY #$C4
+    TXA
+    LDX #$00
+    STA $0344,X
+    TYA
+    STA $0345,X
+    LDA #$09
+    STA $0342,X
+    LDA #$FF
+    STA $0348,X
+    JMP $E456
+
+MenuCheckState:
+    LDA $03EA
+    BEQ MenuCheckDefault
+    JMP $E47A
+
+MenuCheckDefault:
+    LDA #$52
+    STA $0302
+    LDA #$01
+    STA $0301
+    JMP $E453
+
+MenuCheckBank:
+    LDA $08
+    BEQ MenuCheckStart
+    LDA $09
+    AND #$02
+    BEQ MenuCheckReset
+    JMP $C6A0
+
+MenuCheckStart:
+    LDA $03E9
+    BEQ MenuCheckReset
+    LDA #$80
+    STA $3E
+    INC $03EA
+    JSR $E47D
+    JSR $C5BB
+    LDA #$00
+    STA $03EA
+    STA $03E9
+    ASL $09
+    LDA $0C
+    STA $02
+    LDA $0D
+    STA $03
+    RTS
+
+MenuCheckReset:
+    JMP ($0002)
+
+MenuSetMode:
+    LDA #$A0
+    STA $0246
+    LDA #$80
+    STA $02D5
+    LDA #$00
+    STA $02D6
+    RTS
+
+MenuModeOne:
+    LDA #$31
+    STA $0300
+    LDA $0246
+    LDX $0302
+    CPX #$21
+    BEQ MenuModeOneDone
+    LDA #$07
+
+MenuModeOneDone:
+    STA $0306
+    LDX #$40
+    LDA $0302
+    CMP #$50
+    BEQ MenuModeOneAlt
+    CMP #$57
+    BNE MenuModeOneSkip
+
+MenuModeOneAlt:
+    LDX #$80
+
+MenuModeOneSkip:
+    CMP #$53
+    BNE MenuModeOneTail
+    LDA #$EA
+    STA $0304
+    LDA #$02
+    STA $0305
+    LDY #$04
+    LDA #$00
+    BEQ MenuModeOneStore
+
+MenuModeOneTail:
+    LDY $02D5
+    LDA $02D6
+
+MenuModeOneStore:
+    STX $0303
+    STY $0308
+    STA $0309
+    JSR $E459
+    BPL MenuModeOneExit
+    RTS
+
+MenuModeOneExit:
+    LDA $0302
+    CMP #$53
+    BNE MenuModeOneName
+    JSR $C73A
+    LDY #$02
+    LDA ($15),Y
+    STA $0246
+
+MenuModeOneName:
+    LDA $0302
+    CMP #$21
+    BNE MenuModeOnePlayer
+    JSR $C73A
+    LDY #$FE
+    INY
+    INY
+    LDA ($15),Y
+    CMP #$FF
+    BNE MenuModeOneName
+    INY
+    LDA ($15),Y
+    INY
+    CMP #$FF
+    BNE MenuModeOneName
+    DEY
+    DEY
+    STY $0308
+    LDA #$00
+    STA $0309
+
+MenuModeOnePlayer:
+    LDY $0303
+    RTS
+
+MenuModeOnePtr:
+    LDA $0304
+    STA $15
+    LDA $0305
+    STA $16
+    RTS
+
+; Remaining code blocks in the $C5xx-$FFD6 runtime chain are still pending.
+
+; -----------------------------------------------------------------------------
+; Lower-bank main/runtime chain
+; -----------------------------------------------------------------------------
+
+.ORG $E98D
+
+LowerBankFrameEntry:
+    LDA #$0D
+    STA $029C
+    LDA #$28
+    STA $D204
+    LDA #$00
+    STA $D206
+    CLC
+    LDA $0300
+    ADC $0301
+    ADC #$FF
+    STA $023A
+    LDA $0302
+    STA $023B
+    LDA $030A
+    STA $023C
+    LDA $030B
+    STA $023D
+    CLC
+    LDA #$3A
+    STA $32
+    ADC #$04
+    STA $34
+    LDA #$02
+    STA $33
+    STA $35
+    LDA #$34
+    STA $D303
+    JSR $ECAF
+    LDA $023F
+    BNE LowerBankIdleTick
+    TYA
+    BNE LowerBankAdvanceTurn
+LowerBankIdleTick:
+    DEC $029C
+    BPL LowerBankFrameEntry
+    JMP $EA22
+LowerBankAdvanceTurn:
+    LDA $0303
+    BPL LowerBankInputReady
+    LDA #$0D
+    STA $029C
+    JSR $EB87
+    JSR $ECAF
+    BEQ $EA22
+LowerBankInputReady:
+    JSR $EC9A
+    LDA #$00
+    STA $023F
+    JSR $ECC0
+    BEQ LowerBankAfterMove
+    BIT $0303
+    BVS LowerBankActionPath
+    LDA $023F
+    BNE $EA22
+    BEQ $EA2A
+LowerBankActionPath:
+    JSR $EB87
+    JSR $EAFD
+LowerBankAfterMove:
+    LDA $023F
+    BEQ LowerBankTurnCheck
+    LDA $0319
+    STA $30
+LowerBankTurnCheck:
+    LDA $30
+    CMP #$01
+    BEQ $EA2A
+    DEC $02BD
+    BMI $EA2A
+    JMP $E98D
+
+EA22:
+    DEC $02BD
+    BMI $EA2A
+    JMP $E98D
+
+EA2A:
+    JSR $EC84
+    LDA #$00
+    STA $42
+    LDY $30
+    STY $0303
+    RTS
+
+EA37:
+    LDA #$00
+    STA $023F
+    CLC
+    LDA #$3E
+    STA $32
+    ADC #$01
+    STA $34
+    LDA #$02
+    STA $33
+    STA $35
+    LDA #$FF
+    STA $3C
+    JSR $EAFD
+    LDY #$FF
+    LDA $30
+    CMP #$01
+    BNE EA73
+    LDA $023E
+    CMP #$41
+    BEQ EA82
+    CMP #$43
+    BEQ EA82
+    CMP #$45
+    BNE EA6F
+    LDA #$90
+    STA $30
+    BNE EA73
+EA6F:
+    LDA #$8B
+    STA $30
+EA73:
+    LDA $30
+    CMP #$8A
+    BEQ EA80
+    LDA #$FF
+    STA $023F
+    BNE EA82
+EA80:
+    LDY #$00
+EA82:
+    LDA $30
+    STA $0319
+    RTS
+
+EA88:
+    LDA #$01
+    STA $30
+    JSR $EC17
+    LDY #$00
+    STY $31
+    STY $3B
+    STY $3A
+    LDA ($32),Y
+    STA $D20D
+    STA $31
+    LDA $11
+    BNE $EAA5
+    JMP $EDC7
+EAA5:
+    LDA $3A
+    BEQ $EA9E
+    JSR $EC84
+EAAC:
+    RTS
+
+EAAD:
+    TYA
+    PHA
+    INC $32
+    BNE $EAB5
+    INC $33
+EAB5:
+    LDA $32
+    CMP $34
+    LDA $33
+    SBC $35
+    BCC $EADB
+    LDA $3B
+    BNE $EACE
+    LDA $31
+    STA $D20D
+    LDA #$FF
+    STA $3B
+    BNE $EAD7
+EACE:
+    LDA $10
+    ORA #$08
+    STA $10
+    STA $D20E
+EAD7:
+    PLA
+    TAY
+    PLA
+    RTI
+EADB:
+    LDY #$00
+    LDA ($32),Y
+    STA $D20D
+    CLC
+    ADC $31
+    ADC #$00
+    STA $31
+    JMP $EAD7
+EAEC:
+    LDA $3B
+    BEQ $EAFB
+    STA $3A
+    LDA $10
+    AND #$F7
+    STA $10
+    STA $D20E
+EAFB:
+    PLA
+EAFC:
+    RTI
+
+EAFD:
+    LDA #$00
+EAFF:
+    LDY $030F
+    BNE $EB06
+    STA $31
+EB06:
+    STA $38
+    STA $39
+    LDA #$01
+    STA $30
+    JSR $EC40
+    LDA #$3C
+    STA $D303
+    LDA $11
+    BNE $EB1D
+    JMP $EDC7
+EB1D:
+    LDA $0317
+    BEQ $EB27
+    LDA $39
+    BEQ $EB16
+    RTS
+EB27:
+    LDA #$8A
+    STA $30
+    RTS
+EB2C:
+    TYA
+    PHA
+    LDA $D20F
+    STA $D20A
+    BMI $EB3A
+    LDY #$8C
+    STY $30
+EB3A:
+    AND #$20
+    BNE $EB42
+    LDY #$8E
+    STY $30
+EB42:
+    LDA $38
+    BEQ $EB59
+    LDA $D20D
+    CMP $31
+    BEQ $EB51
+    LDY #$8F
+    STY $30
+EB51:
+    LDA #$FF
+    STA $39
+    PLA
+    TAY
+    PLA
+    RTI
+EB59:
+    LDA $D20D
+    LDY #$00
+    STA ($32),Y
+    CLC
+    ADC $31
+    ADC #$00
+    STA $31
+    INC $32
+    BNE $EB6D
+    INC $33
+EB6D:
+    LDA $32
+    CMP $34
+    LDA $33
+    SBC $35
+    BCC $EB55
+    LDA $3C
+    BEQ $EB81
+    LDA #$00
+    STA $3C
+    BEQ $EB51
+EB81:
+    LDA #$FF
+    STA $38
+    BNE $EB55
+
+.ORG $ECAF
+
+LowerBankSetupHelper:
+    LDX #$01
+ECB1:
+    LDY #$FF
+ECB3:
+    DEY
+    BNE $ECB3
+    DEX
+    BNE $ECB1
+    JSR $EA88
+    LDY #$02
+    LDX #$00
+    JSR $EDE2
+    JSR $EA37
+    TYA
+    RTS
+
+ECC8:
+    STA $0310
+    STY $0311
+    JSR $ED2E
+    STA $0310
+    LDA $030C
+    JSR $ED2E
+    STA $030C
+    LDA $0310
+    SEC
+    SBC $030C
+    STA $0312
+    LDA $0311
+    SEC
+    SBC $030D
+    TAY
+    LDX $62
+ECF1:
+    LDA #$00
+    SEC
+    SBC $EE19,X
+    CLC
+    ADC $EE19,X
+    DEY
+    BPL $ECF7
+    CLC
+    ADC $0312
+    TAY
+    LSR A
+    LSR A
+    LSR A
+    ASL A
+    SEC
+    SBC #$16
+    TAX
+    TYA
+    AND #$07
+    TAY
+    LDA #$F5
+    CLC
+    ADC #$0B
+    DEY
+    BPL $ED11
+    LDY #$00
+    SEC
+    SBC #$07
+    BPL $ED1F
+    DEY
+ED1F:
+    CLC
+    ADC $EDF9,X
+    STA $02EE
+    TYA
+    ADC $EDFA,X
+    STA $02EF
+    RTS
+
+ED2E:
+    CMP #$7C
+    BMI $ED36
+    SEC
+    SBC #$7C
+    RTS
+ED36:
+    CLC
+    LDX $62
+    ADC $EE1B,X
+    RTS
+
+ED3D:
+    LDA $11
+    BNE $ED44
+    JMP $EDC7
+ED44:
+    SEI
+    LDA $0317
+    BNE $ED4C
+    BEQ $ED71
+ED4C:
+    LDA $D20F
+    AND #$10
+    BNE $ED3D
+    STA $0316
+    LDX $D40B
+    LDY $14
+    STX $030C
+    STY $030D
+    LDX #$01
+    STX $0315
+    LDY #$0A
+    LDA $11
+    BEQ $EDC7
+    LDA $0317
+    BNE $ED75
+ED71:
+    CLI
+    JMP $EB27
+ED75:
+    LDA $D20F
+    AND #$10
+    CMP $0316
+    BEQ $ED68
+    STA $0316
+    DEY
+    BNE $ED68
+    DEC $0315
+    BMI $ED96
+    LDA $D40B
+    LDY $14
+    JSR $ECC8
+    LDY #$09
+    BNE $ED68
+ED96:
+    LDA $02EE
+    STA $D204
+    LDA $02EF
+    STA $D206
+    LDA #$00
+    STA $D20F
+    LDA $0232
+    STA $D20F
+EDAD:
+    LDA #$55
+    STA ($32),Y
+    INY
+    STA ($32),Y
+    LDA #$AA
+    STA $31
+    CLC
+    LDA $32
+    ADC #$02
+    STA $32
+    LDA $33
+    ADC #$00
+    STA $33
+    CLI
+    RTS
+
+EDC7:
+    JSR $EC84
+    LDA #$3C
+    STA $D302
+    LDA #$3C
+    STA $D303
+    LDA #$80
+    STA $30
+    LDX $0318
+    TXS
+    DEC $11
+    CLI
+    JMP $EA2A
+
+; -----------------------------------------------------------------------------
+; VBI runtime tail
+; -----------------------------------------------------------------------------
+
+.ORG $EDE2
+
+VbiInstallTail:
+    LDA #$11
+    STA $0226
+    LDA #$EC
+    STA $0227
+    LDA #$01
+    SEI
+    JSR $E45C
+    LDA #$01
+    STA $0317
+    CLI
+    RTS
+    LDA #$01
+    SEI
+    JSR $E45C
+    LDA #$01
+    STA $0317
+    CLI
+    RTS
+
+; -----------------------------------------------------------------------------
+; Upper-bank gameplay/runtime entry
+; -----------------------------------------------------------------------------
+
+.ORG $EF00
+
+UpperBankInit:
+    LDX $10E7,Y
+    SLO ($A0,X)
+    DOP #$60
+    LDA #$7F
+    STA $20
+    LDA #$25
+    STA $26
+    LDA #$EF
+    STA $27
+    LDA $02EC
+    LDX $002E
+    STA $034D,X
+    LDY #$00
+    LDA ($24),Y
+    STA $034C,X
+    LDY #$01
+    RTS
+
+EF26:
+    PHA
+    TXA
+    PHA
+    AND #$0F
+    BNE $EF3D
+    CPX #$80
+    BPL $EF3D
+    LDA $02E9
+    BNE $EF41
+EF36:
+    LDY #$82
+    PLA
+    PLA
+    CPY #$00
+    RTS
+EF3D:
+    LDY #$86
+    BMI $EF38
+EF41:
+    STX $002E
+    LDY #$00
+    LDA $0340,X
+    STA $0020,Y
+    INX
+    INY
+    CPY #$0C
+    BMI $EF46
+    JSR $CA29
+    BMI $EF38
+    PLA
+    TAX
+    PLA
+    TAY
+    LDA $27
+    PHA
+    LDA $26
+    PHA
+    TYA
+    LDY #$92
+    RTS
+EF65:
+    BRK
+    BRK
+    BRK
+    BRK
+    BRK
+    BRK
+    JMP $FD05
+    LDA #$FF
+    STA $02FC
+    LDA $02E4
+    STA $6A
+    LDA #$40
+    STA $02BE
+    LDA #$51
+    STA $79
+    LDA #$FB
+    STA $7A
+    LDA #$11
+    STA $60
+    LDA #$FC
+    STA $61
+    RTS
+
+EF8E:
+    LDA $2B
+    AND #$0F
+    BNE $EF9C
+    LDA $2A
+    AND #$0F
+    STA $2A
+    LDA #$00
+EF9C:
+    STA $57
+    CMP #$10
+    BCC $EFA7
+    LDA #$91
+    JMP $F154
+
+EFA7:
+    LDA #$E0
+    STA $02F4
+    LDA #$CC
+    STA $026B
+    LDA #$02
+    STA $02F3
+    STA $022F
+    LDA #$01
+    STA $4C
+    LDA #$C0
+    ORA $10
+    STA $10
+    STA $D20E
+    LDA #$40
+    STA $D40E
+    BIT $026E
+    BPL $EFDC
+    LDA #$C4
+    STA $0200
+    LDA #$FC
+    STA $0201
+    LDA #$C0
+EFDC:
+    STA $D40E
+    LDA #$00
+    STA $0293
+    STA $64
+    STA $7B
+    STA $02F0
+    LDY #$0E
+    LDA #$01
+    STA $02A3,Y
+    DEY
+    BPL $EFEF
+    LDX #$04
+    LDA $FB08,X
+    STA $02C4,X
+    DEX
+    BPL $EFF7
+    LDY $6A
+    DEY
+    STY $0295
+    LDA #$60
+    STA $0294
+    LDX $57
+    LDA $EE4D,X
+    STA $51
+    LDA $6A
+    STA $65
+    LDY $EE1D,X
+    LDA #$28
+    JSR $F57A
+    DEY
+    BNE $F019
+    LDA $026F
+    AND #$3F
+    STA $67
+    TAY
+    CPX #$08
+    BCC $F04C
+    CPX #$0F
+    BEQ $F03E
+    CPX #$0C
+    BCS $F04C
+    TXA
+    ROR A
+    ROR A
+    ROR A
+    AND #$C0
+    ORA $67
+    TAY
+F03E:
+    LDA #$10
+    JSR $F57A
+    CPX #$0B
+    BNE $F04C
+    LDA #$06
+    STA $02C8
+
+F04C:
+    STY $026F
+    LDA $64
+    STA $58
+    LDA $65
+    STA $59
+    LDA $D40B
+    CMP #$7A
+    BNE $F057
+    JSR $F578
+    LDA $EE5D,X
+    BEQ $F06C
+    LDA #$FF
+    STA $64
+    DEC $65
+F06C:
+    JSR $F565
+    LDA $64
+    STA $68
+    LDA $65
+    STA $69
+    LDA #$41
+    JSR $F570
+    STX $66
+    LDA #$18
+    STA $02BF
+    LDA $57
+    CMP #$0C
+    BCS $F08D
+    CMP #$09
+    BCS $F0C6
+F08D:
+    LDA $2A
+    AND #$10
+    BEQ $F0C6
+    LDA #$04
+    STA $02BF
+    LDX #$02
+    LDA $026E
+    BEQ $F0A2
+    JSR $F5A0
+F0A2:
+    LDA #$02
+    JSR $F569
+    DEX
+    BPL $F0A2
+    LDY $6A
+    DEY
+    TYA
+    JSR $F570
+    LDA #$60
+    JSR $F570
+    LDA #$42
+    JSR $F569
+    CLC
+    LDA #$10
+    ADC $66
+    TAY
+    LDX $EE2D,Y
+    BNE $F0DB
+F0C6:
+    LDY $66
+    LDX $EE2D,Y
+    LDA $57
+    BNE $F0DB
+    LDA $026E
+    BEQ $F0DB
+    JSR $F5A0
+    LDA #$22
+    STA $51
+F0DB:
+    LDA $51
+    JSR $F570
+    DEX
+    BNE $F0DB
+    LDA $57
+    CMP #$08
+    BCC $F10F
+    CMP #$0F
+    BEQ $F0F1
+    CMP #$0C
+    BCS $F10F
+F0F1:
+    LDX #$5D
+    LDA $6A
+    SEC
+    SBC #$10
+    JSR $F570
+    LDA #$00
+    JSR $F570
+    LDA $51
+    ORA #$40
+    JSR $F570
+    LDA $51
+    JSR $F570
+    DEX
+    BNE $F107
+F10F:
+    LDA $59
+    JSR $F570
+    LDA $58
+    JSR $F570
+    LDA $51
+    ORA #$40
+    JSR $F570
+    LDA #$70
+    JSR $F570
+    LDA #$70
+    JSR $F570
+    LDA $64
+    STA $0230
+    LDA $65
+    STA $0231
+    LDA #$70
+    JSR $F570
+    LDA $64
+    STA $02E5
+    LDA $65
+    STA $02E6
+    LDY #$01
+    LDA $0230
+    STA ($68),Y
+    INY
+    LDA $0231
+    STA ($68),Y
+    LDA $4C
+    BPL $F164
+    STA $03EC
+    JSR $EF94
+    LDA $03EC
+    LDY #$00
+    STY $03EC
+    TAY
+    RTS
+
+F164:
+    LDA $2A
+    AND #$20
+    BNE $F175
+    JSR $F420
+    STA $0290
+    LDA $52
+    STA $0291
+F175:
+    LDA #$22
+    ORA $022F
+    STA $022F
+    JMP $F20B
+
+F180:
+    JSR $F6CA
+    JSR $F18F
+    JSR $F76A
+    JSR $F60A
+    JMP $F21E
+
+F18F:
+    JSR $F5AC
+    LDA ($64),Y
+    AND $02A0
+    LSR $6F
+    BCS $F19E
+    LSR A
+    BPL $F197
+F19E:
+    STA $02FA
+    CMP #$00
+    RTS
+
+F1A4:
+    STA $02FB
+    CMP #$7D
+    BNE $F1B1
+    JSR $F420
+    JMP $F20B
+
+F1B1:
+    JSR $F6CA
+    LDA $02FB
+    CMP #$9B
+    BNE $F1C1
+    JSR $F661
+    JMP $F20B
+
+F1C1:
+    JSR $F1CA
+    JSR $F60E
+    JMP $F20B
+
+F1CA:
+    LDA $02FF
+    BNE $F1CA
+    LDX #$02
+    LDA $54,X
+    STA $5A,X
+    DEX
+    BPL $F1D1
+    LDA $02FB
+    TAY
+    ROL A
+    ROL A
+    ROL A
+    ROL A
+    AND #$03
+    TAX
+    TYA
+    AND #$9F
+    ORA $FB49,X
+    STA $02FA
+    JSR $F5AC
+    LDA $02FA
+    LSR $6F
+    BCS $F1FA
+    ASL A
+    JMP $F1F2
+
+F1FA:
+    AND $02A0
+    STA $50
+    LDA $02A0
+    EOR #$FF
+    AND ($64),Y
+    ORA $50
+    STA ($64),Y
+    RTS
+
+F20B:
+    JSR $F18F
+    STA $5D
+    LDX $57
+    BNE $F21E
+    LDX $02F0
+    BNE $F21E
+    EOR #$80
+    JSR $F1E9
+
+F21E:
+    LDY $4C
+    JMP $F226
+
+F223:
+    JMP $C8FC
+
+F226:
+    LDA #$01
+    STA $4C
+    LDA $02FB
+    RTS
+
+F22E:
+    BIT $026E
+    BPL $F21E
+    LDA #$40
+    STA $D40E
+    LDA #$00
+    STA $026E
+    LDA #$CE
+    STA $0200
+    LDA #$C0
+    STA $0201
+    JMP $EF94
+
+F24A:
+    JSR $F962
+    JSR $F6BC
+    LDA $6B
+    BNE $F288
+    LDA $54
+    STA $6C
+    LDA $55
+    STA $6D
+F25C:
+    JSR $F2FD
+    STY $4C
+    LDA $02FB
+    CMP #$9B
+    BEQ $F27A
+    JSR $F2BE
+    JSR $F962
+    LDA $63
+    CMP #$71
+    BNE $F277
+    JSR $F556
+F277:
+    JMP $F25C
+
+F27A:
+    JSR $F718
+    JSR $F8B1
+    LDA $6C
+    STA $54
+    LDA $6D
+    STA $55
+
+F288:
+    LDA $6B
+    BEQ $F29D
+    DEC $6B
+    BEQ $F29D
+    LDA $4C
+    BMI $F28C
+    JSR $F180
+    STA $02FB
+    JMP $F962
+
+F29D:
+    JSR $F661
+    LDA #$9B
+    STA $02FB
+    JSR $F20B
+    STY $4C
+    JMP $F962
+
+F2AD:
+    JMP ($0064)
+
+F2B0:
+    STA $02FB
+    JSR $F962
+    JSR $F6BC
+    LDA #$00
+    STA $03E8
+    JSR $F718
+    JSR $F93C
+    BEQ $F2CF
+    ASL $02A2
+    JSR $F1B4
+    JMP $F962
+
+F2CF:
+    LDA $02FE
+    ORA $02A2
+    BNE $F2C6
+    ASL $02A2
+    INX
+    LDA $03E8
+    BEQ $F2E5
+    TXA
+    CLC
+    ADC #$2D
+    TAX
+F2E5:
+    LDA $FB0D,X
+    STA $64
+    LDA $FB0E,X
+    STA $65
+    JSR $F2AD
+    JSR $F20B
+    JMP $F962
+
+F2F8:
+    LDA #$FF
+    STA $02FC
+
+F2FD:
+    LDA #$00
+    STA $03E8
+    LDA $2A
+    LSR A
+    BCS $F376
+    LDA #$80
+    LDX $11
+    BEQ $F372
+    LDA $02FC
+    CMP #$FF
+    BEQ $F2FD
+    STA $7C
+    LDX #$FF
+    STX $02FC
+    LDX $02DB
+    BNE $F323
+    JSR $F983
+F323:
+    TAY
+    CPY #$C0
+    BCS $F2F8
+    LDA ($79),Y
+    STA $02FB
+    TAX
+    BMI $F333
+    JMP $F3B4
+    CMP #$80
+    BEQ $F2F8
+    CMP #$81
+    BNE $F345
+    LDA $02B6
+    EOR #$80
+    STA $02B6
+    BCS $F2F8
+    CMP #$82
+    BNE $F355
+    LDA $02BE
+    BEQ $F359
+    LDA #$00
+    STA $02BE
+    BEQ $F2F8
+    CMP #$83
+    BNE $F360
+    LDA #$40
+    STA $02BE
+    BNE $F2F8
+    CMP #$84
+    BNE $F36C
+    LDA #$80
+    STA $02BE
+    JMP $F2F8
+    CMP #$85
+    BNE $F37B
+    LDA #$88
+    STA $4C
+    STA $11
+    LDA #$9B
+    JMP $F3DA
+
+.ORG $F3A5
+
+F3A5:
+    CMP #$92
+    BCS $F3B4
+    CMP #$8E
+    BCC $F38C
+    SBC #$72
+    INC $03E8
+    BNE $F3DA
+
+F3B4:
+    LDA $7C
+    CMP #$40
+    BCS $F3CF
+    LDA $02FB
+    CMP #$61
+    BCC $F3CF
+    CMP #$7B
+    BCS $F3CF
+    LDA $02BE
+    BEQ $F3CF
+    ORA $7C
+    JMP $F323
+
+F3CF:
+    JSR $F93C
+    BEQ $F3DD
+    LDA $02FB
+    EOR $02B6
+    STA $02FB
+F3DD:
+    JMP $F21E
+
+F3E0:
+    LDA #$80
+    STA $02A2
+    RTS
+
+F3E6:
+    DEC $54
+    BPL $F3F0
+    LDX $02BF
+    DEX
+F3EE:
+    STX $54
+F3F0:
+    JMP $F90C
+
+F3F3:
+    INC $54
+    LDA $54
+    CMP $02BF
+    BCC $F3F0
+    LDX #$00
+    BEQ $F3EE
+
+F400:
+    DEC $55
+    LDA $55
+    BMI $F40A
+    CMP $52
+    BCS $F40E
+F40A:
+    LDA $53
+F40C:
+    STA $55
+F40E:
+    JMP $F88E
+
+F411:
+    INC $55
+    LDA $55
+    CMP $53
+    BCC $F40E
+    BEQ $F40E
+    LDA $52
+    JMP $F40C
+
+F420:
+    JSR $F9A6
+    LDY $64
+    LDA #$00
+    STA $64
+    STA ($64),Y
+    INY
+    BNE $F429
+    INC $65
+F429:
+    LDX $65
+    CPX $6A
+    BCC $F429
+    LDA #$FF
+F438:
+    STA $02B2,Y
+    INY
+    CPY #$04
+    BCC $F438
+
+F440:
+    JSR $F997
+    STA $63
+    STA $6D
+    LDA #$00
+    STA $54
+    STA $56
+    STA $6C
+    RTS
+
+F450:
+    LDA $63
+    CMP $52
+    BEQ $F477
+    LDA $55
+    CMP $52
+    BNE $F45F
+    JSR $F923
+F45F:
+    JSR $F400
+    LDA $55
+    CMP $53
+    BNE $F46F
+    LDA $54
+    BEQ $F46F
+    JSR $F3E6
+F46F:
+    LDA #$20
+    STA $02FB
+    JSR $F1CA
+F477:
+    JMP $F88E
+
+F47A:
+    JSR $F411
+    LDA $55
+    CMP $52
+    BNE $F48B
+    JSR $F665
+    JSR $F758
+    BCS $F492
+F48B:
+    LDA $63
+    JSR $F75D
+    BCC $F47A
+F492:
+    JMP $F88E
+
+F495:
+    LDA $63
+    JMP $F73E
+
+F49A:
+    LDA $63
+    JMP $F74A
+
+F49F:
+    JSR $F94C
+    JSR $F18F
+    STA $7D
+    LDA #$00
+    STA $02BB
+F4AC:
+    JSR $F1E9
+    LDA $63
+    PHA
+    JSR $F612
+    PLA
+    CMP $63
+    BCS $F4C6
+    LDA $7D
+    PHA
+    JSR $F18F
+    STA $7D
+    PLA
+    JMP $F4AC
+
+F4C6:
+    JSR $F957
+    DEC $02BB
+    BMI $F4D2
+    DEC $54
+    BNE $F4C9
+F4D2:
+    JMP $F88E
+
+F4D5:
+    JSR $F94C
+F4D8:
+    JSR $F5AC
+    LDA $64
+    STA $68
+    LDA $65
+    STA $69
+    LDA $63
+    PHA
+    JSR $F60A
+    PLA
+    CMP $63
+    BCS $F4FE
+    LDA $54
+    CMP $02BF
+    BCS $F4FE
+    JSR $F18F
+    LDY #$00
+    STA ($68),Y
+    BEQ $F4D8
+F4FE:
+    LDY #$00
+    TYA
+    STA ($68),Y
+    JSR $F918
+    JSR $F957
+    JMP $F88E
+
+F50C:
+    SEC
+    JSR $F7C2
+    LDA $52
+    STA $55
+    JSR $F5AC
+    JSR $F78E
+    JSR $F7E2
+    JMP $F88E
+
+F520:
+    JSR $F88E
+    LDY $51
+    STY $54
+F527:
+    LDY $54
+F529:
+    TYA
+    SEC
+    JSR $F75B
+    PHP
+    TYA
+    CLC
+    ADC #$78
+    PLP
+    JSR $F73C
+    INY
+    CPY #$18
+    BNE $F529
+    LDA $02B4
+    ORA #$01
+    STA $02B4
+    LDA #$00
+    STA $55
+    JSR $F5AC
+    JSR $F82A
+    JSR $F758
+    BCC $F527
+    JMP $F41B
+
+F556:
+    LDY #$20
+    JSR $F983
+    DEY
+    BPL $F558
+    RTS
+
+F55F:
+    JSR $F440
+    JMP $F3E6
+
+F565:
+    LDA #$02
+    BNE $F57A
+
+F569:
+    LDY $026E
+    BEQ $F570
+    ORA #$20
+
+F570:
+    LDY $4C
+    BMI $F59F
+    LDY #$00
+    STA ($64),Y
+    LDA #$01
+
+F57A:
+    STA $029E
+    LDA $4C
+    BMI $F59F
+    LDA $64
+    SEC
+    SBC $029E
+    STA $64
+    BCS $F58D
+    DEC $65
+F58D:
+    LDA $0F
+    CMP $65
+    BCC $F59F
+    BNE $F59B
+    LDA $0E
+    CMP $64
+    BCC $F59F
+F59B:
+    LDA #$93
+    STA $4C
+F59F:
+    RTS
+
+F5A0:
+    LDA #$02
+    JSR $F570
+    LDA #$A2
+    JSR $F570
+    DEX
+    RTS
+
+F5AC:
+    LDX #$01
+    STX $66
+    DEX
+    STX $65
+    LDA $54
+    ASL A
+    ROL $65
+    ASL A
+    ROL $65
+    ADC $54
+    STA $64
+    BCC $F5C3
+    INC $65
+F5C3:
+    LDY $57
+    LDX $EE6D,Y
+    ASL $64
+    ROL $65
+    DEX
+    BNE $F5C8
+    LDA $56
+    LSR A
+    LDA $55
+    LDX $EE9D,Y
+    BEQ $F5DF
+    ROR A
+    ASL $66
+    DEX
+    BNE $F5D9
+F5DF:
+    ADC $64
+    BCC $F5E5
+    INC $65
+F5E5:
+    CLC
+    ADC $58
+    STA $64
+    STA $5E
+    LDA $65
+    ADC $59
+    STA $65
+    STA $5F
+    LDX $EE9D,Y
+    LDA $FB04,X
+    AND $55
+    ADC $66
+    TAY
+    LDA $EEAC,Y
+    STA $02A0
+    STA $6F
+    LDY #$00
+F609:
+    RTS
+
+F60A:
+    LDA #$00
+    BEQ $F610
+    LDA #$9B
+F610:
+    STA $7D
+    INC $63
+    INC $55
+    BNE $F61A
+    INC $56
+F61A:
+    LDA $55
+    LDX $57
+    CMP $EE7D,X
+    BEQ $F62D
+    CPX #$00
+    BNE $F609
+    CMP $53
+    BEQ $F609
+    BCC $F609
+F62D:
+    CPX #$08
+    BNE $F635
+    LDA $56
+    BEQ $F609
+F635:
+    LDA $57
+    BNE $F665
+    LDA $63
+    CMP #$51
+    BCC $F649
+    LDA $7D
+    BEQ $F665
+    JSR $F661
+    JMP $F6AB
+F649:
+    JSR $F665
+    LDA $54
+    CLC
+    ADC #$78
+    JSR $F75D
+    BCC $F65E
+    LDA $7D
+    BEQ $F65E
+    CLC
+    JSR $F50D
+F65E:
+    JMP $F88E
+
+F661:
+    LDA #$9B
+    STA $7D
+F665:
+    JSR $F997
+    LDA #$00
+    STA $56
+    INC $54
+    LDX $57
+    LDY #$18
+    BIT $7B
+    BPL $F67B
+    LDY #$04
+    TYA
+    BNE $F67E
+F67B:
+    LDA $EE8D,X
+F67E:
+    CMP $54
+    BNE $F6AB
+    STY $029D
+    TXA
+    BNE $F6AB
+    LDA $7D
+    BEQ $F6AB
+    CMP #$9B
+    BEQ $F691
+    CLC
+F691:
+    JSR $F7F7
+    INC $02BB
+    DEC $6C
+    BPL $F69D
+    INC $6C
+F69D:
+    DEC $029D
+    LDA $02B2
+    SEC
+    BPL $F691
+    LDA $029D
+    STA $54
+F6AB:
+    JMP $F88E
+
+F6AE:
+    SEC
+    LDA $70,X
+    SBC $74
+    STA $70,X
+    LDA $71,X
+    SBC $75
+    STA $71,X
+    RTS
+
+F6BC:
+    LDA $02BF
+    CMP #$04
+    BEQ $F6CA
+    LDA $57
+    BEQ $F6CA
+    JSR $EF94
+F6CA:
+    LDA #$27
+    CMP $53
+    BCS $F6D2
+    STA $53
+F6D2:
+    LDX $57
+    LDA $EE8D,X
+    CMP $54
+    BCC $F705
+    BEQ $F705
+    CPX #$08
+    BNE $F6EB
+    LDA $56
+    BEQ $F6F8
+    CMP #$01
+    BNE $F705
+    BEQ $F6EF
+F6EB:
+    LDA $56
+    BNE $F705
+F6EF:
+    LDA $EE7D,X
+    CMP $55
+    BCC $F705
+    BEQ $F705
+F6F8:
+    LDA #$01
+    STA $4C
+    LDA #$80
+    LDX $11
+    STA $11
+    BEQ $F70A
+    RTS
+F705:
+    JSR $F440
+    LDA #$8D
+F70A:
+    STA $4C
+    PLA
+    PLA
+    LDA $7B
+    BPL $F715
+    JMP $F962
+F715:
+    JMP $F21E
+
+F718:
+    LDY #$00
+    LDA $5F
+    BEQ $F722
+    LDA $5D
+    STA ($5E),Y
+F722:
+    RTS
+
+F723:
+    PHA
+    AND #$07
+    TAX
+    LDA $EEB4,X
+    STA $6E
+    PLA
+    LSR A
+    LSR A
+    LSR A
+    TAX
+    RTS
+
+F732:
+    ROL $02B4
+    ROL $02B3
+    ROL $02B2
+    RTS
+
+F73C:
+    BCC $F74A
+    JSR $F723
+    LDA $02A3,X
+    ORA $6E
+    STA $02A3,X
+    RTS
+F74A:
+    JSR $F723
+    LDA $6E
+    EOR #$FF
+    AND $02A3,X
+    STA $02A3,X
+    RTS
+
+F758:
+    LDA $54
+F75A:
+    CLC
+    ADC #$78
+F75D:
+    JSR $F723
+    CLC
+    LDA $02A3,X
+    AND $6E
+    BEQ $F769
+    SEC
+F769:
+    RTS
+
+F76A:
+    LDA $02FA
+    LDY $57
+    CPY #$0E
+    BCS $F78A
+    CPY #$0C
+    BCS $F77B
+    CPY #$03
+    BCS $F78A
+F77B:
+    ROL A
+    ROL A
+    ROL A
+    ROL A
+    AND #$03
+    TAX
+    LDA $02FA
+    AND #$9F
+    ORA $FB4D,X
+F78A:
+    STA $02FB
+    RTS
+
+F78E:
+    LDX $6A
+    DEX
+    STX $69
+    STX $67
+    LDA #$B0
+    STA $68
+    LDA #$D8
+    STA $66
+    LDX $54
+F79F:
+    INX
+    CPX $02BF
+    BEQ $F78D
+    LDY #$27
+F7A7:
+    LDA ($68),Y
+    STA ($66),Y
+    DEY
+    BPL $F7A7
+    SEC
+    LDA $68
+    STA $66
+    SBC #$28
+    STA $68
+    LDA $69
+    STA $67
+    SBC #$00
+    STA $69
+    JMP $F79F
+
+F7C2:
+    PHP
+    LDY #$16
+F7C5:
+    TYA
+    JSR $F75A
+    PHP
+    TYA
+    CLC
+    ADC #$79
+    PLP
+    JSR $F73C
+    DEY
+    BMI $F7D9
+    CPY $54
+    BCS $F7C5
+F7D9:
+    LDA $54
+    CLC
+    ADC #$78
+    PLP
+    JMP $F73C
+
+F7E2:
+    LDA $52
+    STA $55
+    JSR $F5AC
+    SEC
+    LDA $53
+    SBC $52
+    TAY
+    LDA #$00
+    STA ($64),Y
+    DEY
+    BPL $F7F1
+    RTS
+
+F7F7:
+    JSR $F732
+    LDA $026E
+    BEQ $F827
+F7FF:
+    LDA $026C
+    BNE $F7FF
+    LDA #$08
+    STA $026C
+F809:
+    LDA $026C
+    CMP #$01
+    BNE $F809
+F810:
+    LDA $D40B
+    CMP #$40
+    BCS $F810
+    LDX #$0D
+    LDA $02BF
+    CMP #$04
+    BNE $F822
+    LDX #$70
+F822:
+    CPX $D40B
+    BCS $F822
+F827:
+    JSR $F9A6
+    LDA $64
+    LDX $65
+    INX
+    CPX $6A
+    BEQ $F839
+    SEC
+    SBC #$10
+    JMP $F82E
+F839:
+    ADC #$27
+    BNE $F847
+    LDX $65
+    INX
+    CPX $6A
+    BEQ $F87C
+    CLC
+    ADC #$10
+F847:
+    TAY
+    STA $7E
+    SEC
+    LDA $64
+    SBC $7E
+    STA $64
+    BCS $F855
+    DEC $65
+F855:
+    LDA $64
+    CLC
+    ADC #$28
+    STA $7E
+    LDA $65
+    ADC #$00
+    STA $7F
+    LDA ($7E),Y
+    STA ($64),Y
+    INY
+    BNE $F862
+    LDY #$10
+    LDA $64
+    CMP #$D8
+    BEQ $F87C
+    CLC
+    ADC #$F0
+    STA $64
+    BCC $F855
+    INC $65
+    BNE $F855
+F87C:
+    LDX $6A
+    DEX
+    STX $7F
+    LDX #$D8
+    STX $7E
+    LDA #$00
+    LDY #$27
+    STA ($7E),Y
+    DEY
+    BPL $F889
+
+F88E:
+    LDA #$00
+    STA $63
+    LDA $54
+    STA $51
+F896:
+    LDA $51
+    JSR $F75A
+    BCS $F8A9
+    LDA $63
+    ADC #$28
+    STA $63
+    DEC $51
+    JMP $F896
+F8A9:
+    CLC
+    LDA $63
+    ADC $55
+    STA $63
+    RTS
+
+F8B1:
+    JSR $F94C
+    LDA $63
+    PHA
+    LDA $6C
+    STA $54
+    LDA $6D
+    STA $55
+    LDA #$01
+    STA $6B
+    LDX #$17
+    LDA $7B
+    BPL $F8CB
+    LDX #$03
+F8CB:
+    CPX $54
+    BNE $F8DA
+    LDA $55
+    CMP $53
+    BNE $F8DA
+    INC $6B
+    JMP $F8EA
+F8DA:
+    JSR $F60A
+    INC $6B
+    LDA $63
+    CMP $52
+    BNE $F8C3
+    DEC $54
+    JSR $F400
+F8EA:
+    JSR $F18F
+    BNE $F906
+    DEC $6B
+    LDA $63
+    CMP $52
+    BEQ $F906
+    JSR $F400
+    LDA $55
+    CMP $53
+    BNE $F902
+    DEC $54
+F902:
+    LDA $6B
+    BNE $F8EA
+F906:
+    PLA
+    STA $63
+    JMP $F957
+
+F90C:
+    JSR $F88E
+    LDA $51
+    STA $6C
+    LDA $52
+    STA $6D
+    RTS
+
+F918:
+    LDA $63
+    CMP $52
+    BNE $F920
+    DEC $54
+F920:
+    JSR $F88E
+
+F923:
+    LDA $63
+    CMP $52
+    BEQ $F917
+    JSR $F5AC
+    LDA $53
+    SEC
+    SBC $52
+    TAY
+    LDA ($64),Y
+
+F93C:
+    LDX #$2D
+F93E:
+    LDA $FB0D,X
+    CMP $02FB
+    BEQ $F94B
+    DEX
+    DEX
+    DEX
+    BPL $F93E
+F94B:
+    RTS
+
+F94C:
+    LDX #$02
+F94E:
+    LDA $54,X
+    STA $02B8,X
+    DEX
+    BPL $F94E
+    RTS
+
+F957:
+    LDX #$02
+F959:
+    LDA $02B8,X
+    STA $54,X
+    DEX
+    BPL $F959
+    RTS
+
+F962:
+    LDA $02BF
+    CMP #$18
+    BEQ $F980
+    LDX #$0B
+F96B:
+    LDA $54,X
+    PHA
+    LDA $0290,X
+    STA $54,X
+    PLA
+    STA $0290,X
+    DEX
+    BPL $F96B
+    LDA $7B
+    EOR #$FF
+    STA $7B
+F980:
+    JMP $F21E
+
+F983:
+    LDX #$7E
+F985:
+    PHA
+    STX $D01F
+    LDA $D40B
+F98C:
+    CMP $D40B
+    BEQ $F98C
+    DEX
+    DEX
+    BPL $F986
+    PLA
+    RTS
+
+F997:
+    LDA #$00
+    LDX $7B
+    BNE $F9A1
+    LDX $57
+    BNE $F9A3
+F9A1:
+    LDA $52
+F9A3:
+    STA $55
+    RTS
+
+F9A6:
+    LDA $58
+    STA $64
+    LDA $59
+    STA $65
+    RTS
+
+.ORG $F9AF
+
+F9AF:
+    LDX #$00
+    LDA $22
+    CMP #$11
+    BEQ $F9BF
+    CMP #$12
+    BEQ $F9BE
+    LDY #$84
+    RTS
+F9BE:
+    INX
+F9BF:
+    STX $02B7
+    LDA $54
+    STA $02F5
+    LDA $55
+    STA $02F6
+    LDA $56
+    STA $02F7
+    LDA #$01
+    STA $02F8
+    STA $02F9
+    SEC
+    LDA $02F5
+    SBC $5A
+    STA $76
+    BCS $F9F1
+    LDA #$FF
+    STA $02F8
+    LDA $76
+    EOR #$FF
+    CLC
+    ADC #$01
+    STA $76
+F9F1:
+    SEC
+    LDA $02F6
+    SBC $5B
+    STA $77
+    LDA $02F7
+    SBC $5C
+    STA $78
+    BCS $FA19
+    LDA #$FF
+    STA $02F9
+    LDA $77
+    EOR #$FF
+    STA $77
+    LDA $78
+    EOR #$FF
+    STA $78
+    INC $77
+    BNE $FA19
+    INC $78
+FA19:
+    LDX #$02
+    LDY #$00
+    STY $73
+    TYA
+    STA $70,X
+    LDA $5A,X
+    STA $54,X
+    DEX
+    BPL $FA1F
+    LDA $77
+    INX
+    TAY
+    LDA $78
+    STA $7F
+    STA $75
+    BNE $FA40
+    LDA $77
+    CMP $76
+    BCS $FA40
+    LDA $76
+    LDX #$02
+    TAY
+FA40:
+    TYA
+    STA $7E
+    STA $74
+    PHA
+    LDA $75
+    LSR A
+    PLA
+    ROR A
+    STA $70,X
+    LDA $7E
+    ORA $7F
+    BNE $FA56
+    JMP $FB01
+FA56:
+    CLC
+    LDA $70
+    ADC $76
+    STA $70
+    BCC $FA61
+    INC $71
+FA61:
+    LDA $71
+    CMP $75
+    BCC $FA7C
+    BNE $FA6F
+    LDA $70
+    CMP $74
+    BCC $FA7C
+FA6F:
+    CLC
+    LDA $54
+    ADC $02F8
+    STA $54
+    LDX #$00
+    JSR $F6AE
+FA7C:
+    CLC
+    LDA $72
+    ADC $77
+    STA $72
+    LDA $73
+    ADC $78
+    STA $73
+    CMP $75
+    BCC $FAB5
+    BNE $FA95
+    LDA $72
+    CMP $74
+    BCC $FAB5
+FA95:
+    BIT $02F9
+    BPL $FAAA
+    DEC $55
+    LDA $55
+    CMP #$FF
+    BNE $FAB0
+    LDA $56
+    BEQ $FAB0
+    DEC $56
+    BPL $FAB0
+FAAA:
+    INC $55
+    BNE $FAB0
+    INC $56
+FAB0:
+    LDX #$02
+    JSR $F6AE
+FAB5:
+    JSR $F6CA
+    JSR $F1CA
+    LDA $02B7
+    BEQ $FAEF
+    JSR $F94C
+    LDA $02FB
+    STA $02BC
+    LDA $54
+    PHA
+    JSR $F612
+    PLA
+    STA $54
+    JSR $F6CA
+    JSR $F18F
+    BNE $FAE6
+    LDA $02FD
+    STA $02FB
+    JSR $F1CA
+    JMP $FAC9
+FAE6:
+    LDA $02BC
+    STA $02FB
+    JSR $F957
+FAEF:
+    SEC
+    LDA $7E
+    SBC #$01
+    STA $7E
+    LDA $7F
+    SBC #$00
+    STA $7F
+    BMI $FB01
+    JMP $FA4D
+
+FB01:
+    JMP $F21E
+
+; -----------------------------------------------------------------------------
+; Upper-bank tables and lookup data
+; -----------------------------------------------------------------------------
+
+.ORG $FB04
+
+FB04Table:
+    .BYTE $00, $01, $03, $07, $28, $CA, $94, $46, $00, $1B, $E0, $F3, $1C, $E6, $F3, $1D
+    .BYTE $F3, $F3, $1E, $00, $F4, $1F, $11, $F4, $7D, $20, $F4, $7E, $50, $F4, $7F, $7A
+    .BYTE $F4, $9B, $61, $F6, $9C, $20, $F5, $9D, $0C, $F5, $9E, $9A, $F4, $9F, $95, $F4
+    .BYTE $FD, $56, $F5, $FE, $D5, $F4, $FF, $9F, $F4, $1C, $40, $F4
+
+.ORG $FB40
+
+FB40Lookup:
+    .BYTE $1D, $5F, $F5, $1E, $1B, $F4, $1F, $0A, $F4, $40, $00, $20, $60, $20, $40, $00
+    .BYTE $60, $6C, $6A, $3B, $8A, $8B, $6B, $2B, $2A, $6F, $80, $70, $75, $9B, $69, $2D
+    .BYTE $3D, $76, $80, $63, $8C, $8D, $62, $78, $7A, $34, $80, $33, $36, $1B, $35, $32
+    .BYTE $31, $2C, $20, $2E, $6E, $80, $6D, $2F, $81, $72, $80, $65, $79, $7F, $74, $77
+    .BYTE $71, $39, $80, $30, $37, $7E, $38, $3C, $3E, $66, $68, $64, $80, $82, $67, $73
+    .BYTE $61, $4C, $4A, $3A, $8A, $8B, $4B, $5C, $5E, $4F, $80, $50, $55, $9B, $49, $5F
+    .BYTE $7C, $56, $80, $43, $8C, $8D, $42, $58, $5A, $24, $80, $23, $26, $1B, $25, $22
+    .BYTE $21, $5B, $20, $5D, $4E, $80, $4D, $3F, $81, $52, $80, $45, $59, $9F, $54, $57
+    .BYTE $51, $28, $80, $29, $27, $9C, $40, $7D, $9D, $46, $48, $44, $80, $83, $47, $53
+    .BYTE $41, $0C, $0A, $7B, $80, $80, $0B, $1E, $1F, $0F, $80, $10, $15, $9B, $09, $1C
+    .BYTE $1D, $16, $80, $03, $89, $80, $02, $18, $1A, $80, $80, $85, $80, $1B, $80, $FD
+    .BYTE $80, $00, $20, $60, $0E, $80, $0D, $80, $81, $12, $80, $05, $19, $9E, $14, $17
+
+.ORG $FC00
+
+FC00:
+    ORA ($80),Y
+    DOP #$80
+    DOP #$FE
+    DOP #$7D
+    ISC $0806,X
+    DOP $80
+    STY $07
+    SLO ($01),Y
+    TOP $1E1D,X
+    SLO $8F8E,X
+    BCC $FBAA
+    TXA
+    PHA
+    TYA
+    PHA
+    LDY $D301
+    LDA $D209
+    CMP $02F2
+    BNE $FC2D
+    LDX $02F1
+    BNE $FC76
+FC2D:
+    LDX $026D
+    CMP #$83
+    BNE $FC47
+    TXA
+    EOR #$FF
+    STA $026D
+    BNE $FC41
+    TYA
+    ORA #$04
+    BNE $FC44
+FC41:
+    TYA
+    AND #$FB
+FC44:
+    TAY
+    BCS $FC6D
+FC47:
+    TXA
+    BNE $FC87
+    LDA $D209
+    TAX
+    CMP #$9F
+    BNE $FC5C
+    LDA $02FF
+    EOR #$FF
+    STA $02FF
+    BCS $FC6D
+FC5C:
+    AND #$3F
+    CMP #$11
+    BNE $FC90
+    STX $02DC
+    BEQ $FC6D
+    STX $02FC
+    STX $02F2
+    LDA #$03
+    STA $02F1
+    LDA #$00
+    STA $4D
+    LDA $02D9
+    STA $022B
+    LDA $022F
+    BNE $FC87
+    LDA $02DD
+    STA $022F
+FC87:
+    STY $D301
+    PLA
+    TAY
+    PLA
+    TAX
+    PLA
+    RTI
+
+FC90:
+    CPX #$84
+    BEQ $FCB5
+    CPX #$94
+    BNE $FC67
+    LDA $02F4
+    LDX $026B
+    STA $026B
+    STX $02F4
+    CPX #$CC
+    BEQ $FCAE
+    TYA
+    ORA #$08
+    TAY
+    BNE $FC6D
+FCAE:
+    TYA
+    AND #$F7
+    TAY
+    JMP $FC6D
+
+FCB5:
+    LDA $022F
+    BEQ $FC87
+    STA $02DD
+    LDA #$00
+    STA $022F
+    BEQ $FC87
+FCB9:
+    PHA
+    LDA $02C6
+    EOR $004F
+    AND $004E
+    STA $D40A
+    STA $D017
+    PLA
+    RTI
+
+FCD6:
+    BRK
+    BRK
+    JMP $F983
+    LDA #$CC
+    STA $02EE
+    LDA #$05
+    STA $02EF
+    RTS
+
+FCE6:
+    LDA $2B
+    STA $3E
+    LDA $2A
+    AND #$0C
+    CMP #$04
+    BEQ $FCF7
+    CMP #$08
+    BEQ $FD34
+    RTS
+
+FCF7:
+    LDA #$00
+    STA $0289
+    STA $3F
+    LDA #$01
+    JSR $FDFC
+    BMI $FD2E
+    LDA #$34
+    STA $D302
+    LDX $62
+    LDY $FE93,X
+    LDA $FE91,X
+    TAX
+    LDA #$03
+    STA $022A
+    JSR $E45C
+    LDA $022A
+    BNE $FD1B
+    LDA #$80
+    STA $3D
+    STA $028A
+    JMP $FD77
+FD2A:
+    LDY #$80
+    DEC $11
+FD2E:
+    LDA #$00
+    STA $0289
+    RTS
+
+FD34:
+    LDA #$80
+    STA $0289
+    LDA #$02
+    JSR $FDFC
+    BMI $FD2E
+    LDA #$CC
+    STA $D204
+    LDA #$05
+    STA $D206
+    LDA #$60
+    STA $0300
+    JSR $E468
+    LDA #$34
+    STA $D302
+    LDX $62
+    LDY $FE8F,X
+    LDA $FE8D,X
+    TAX
+    LDA #$03
+    JSR $E45C
+    LDA #$FF
+    STA $022A
+    LDA $11
+    BEQ $FD2A
+    LDA $022A
+    BNE $FD6A
+    LDA #$00
+    STA $3D
+FD77:
+    LDY #$01
+    RTS
+
+FD7A:
+    LDA $3F
+    BMI $FDB1
+    LDX $3D
+    CPX $028A
+    BEQ $FD8D
+    LDA $0400,X
+    INC $3D
+    LDY #$01
+    RTS
+FD8D:
+    LDA #$52
+    JSR $FE3F
+    TYA
+    BMI $FD8C
+    LDA #$00
+    STA $3D
+    LDX #$80
+    LDA $03FF
+    CMP #$FE
+    BEQ $FDAF
+    CMP #$FA
+    BNE $FDA9
+    LDX $047F
+FDA9:
+    STX $028A
+    JMP $FD7A
+FDAF:
+    DEC $3F
+FDB1:
+    LDY #$88
+    RTS
+
+FDFC:
+    STA $40
+    LDA $14
+    CLC
+    LDX $62
+    ADC $FE95,X
+    TAX
+    LDA #$FF
+    STA $D01F
+    LDA #$00
+FE10:
+    LDY #$F0
+FE10Loop:
+    DEY
+    BNE FE10Loop
+    STA $D01F
+    LDY #$F0
+FE18Loop:
+    DEY
+    BNE FE18Loop
+    CPX $14
+    BNE $FE07
+    DEC $40
+    BEQ $FE31
+    TXA
+    CLC
+    LDX $62
+    ADC $FE97,X
+    TAX
+    CPX $14
+    BNE $FE2B
+    BEQ $FDFE
+FE31:
+    JSR $FE36
+    TYA
+    RTS
+
+FE36:
+    LDA $E425
+    PHA
+    LDA $E424
+    PHA
+    RTS
+
+FE3F:
+    STA $0302
+    LDA #$00
+    STA $0309
+    LDA #$83
+    STA $0308
+    LDA #$03
+    STA $0305
+    LDA #$FD
+    STA $0304
+    LDA #$60
+    STA $0300
+    LDA #$00
+    STA $0301
+    LDA #$23
+    STA $0306
+    LDA $0302
+    LDY #$40
+    CMP #$52
+    BEQ $FE70
+    LDY #$80
+FE70:
+    STY $0303
+    LDA $3E
+    STA $030B
+    JSR $E459
+    RTS
+
+FE7C:
+    STA $03FF
+    LDA #$55
+    STA $03FD
+    STA $03FE
+    LDA #$57
+    JSR $FE3F
+    RTS
+
+.ORG $FE8D
+
+FE8DTable:
+    .BYTE $04, $03, $80, $C0, $02, $01, $40, $E0
+
+.ORG $FE95
+
+FE95:
+    ASL $0A19,X
+    PHP
+    LDA #$1E
+    STA $0314
+    RTS
+    NOP
+    .BYTE $02
+    CPY #$03
+    LDA #$04
+    STA $02DF
+    LDX $FE9F
+    LDY $FEA0
+    LDA #$53
+    STA $0302
+    STA $030A
+    JSR $FF14
+    JSR $E459
+    BMI $FEC1
+    JSR $FF44
+    RTS
+    JSR $FEA3
+    LDA #$00
+    STA $02DE
+    RTS
+
+FECB:
+    PHA
+    LDA $0341,X
+    STA $21
+    JSR $FF4B
+    LDX $02DE
+    PLA
+    STA $03C0,X
+    INX
+    CPX $02DF
+    BEQ $FEF6
+    STX $02DE
+    CMP #$9B
+    BEQ $FEEB
+    LDY #$01
+    RTS
+
+FEEB:
+    LDA #$20
+    STA $03C0,X
+    INX
+    CPX $02DF
+    BNE $FEED
+
+FEF6:
+    LDA #$00
+    STA $02DE
+    LDX $FEA1
+    LDY $FEA2
+    JSR $FF14
+    JMP $E459
+
+FF07:
+    JSR $FF4B
+    LDA #$9B
+    LDX $02DE
+    BNE $FEED
+    LDY #$01
+    RTS
+
+FF14:
+    STX $0304
+    STY $0305
+    LDA #$40
+    STA $0300
+    LDA $21
+    STA $0301
+    LDA #$80
+    LDX $0302
+    CPX #$53
+    BNE $FF2F
+    LDA #$40
+FF2F:
+    STA $0303
+    LDA $02DF
+    STA $0308
+    LDA #$00
+    STA $0309
+    LDA $0314
+    STA $0306
+    RTS
+
+FF44:
+    LDA $02EC
+    STA $0314
+    RTS
+
+FF4B:
+    LDY #$57
+    LDA $2B
+    CMP #$4E
+    BNE $FF57
+    LDX #$28
+    BNE $FF65
+FF57:
+    CMP #$44
+    BNE $FF5F
+    LDX #$14
+    BNE $FF65
+FF5F:
+    CMP #$53
+    BNE $FF6F
+    LDX #$1D
+FF65:
+    STX $02DF
+    STY $0302
+    STA $030A
+    RTS
+
+FF6F:
+    LDA #$4E
+    BNE $FF4F
+
+.ORG $FF73
+
+FF73: ; CKROM1
+    LDX #$00
+    STX $8B
+    STX $8C
+FF79:
+    JSR $FFA9
+    CPX #$0C
+    BNE FF79
+    LDA $C000
+    LDX $C001
+FF86:
+    CMP $8B
+    BNE FF90
+    CPX $8C
+    BNE FF90
+    CLC
+    RTS
+FF90:
+    SEC
+    RTS
+
+FF92: ; CKROM2
+    LDX #$00
+    STX $8B
+    STX $8C
+    LDX #$0C
+    JSR $FFA9
+    JSR $FFA9
+    LDA $FFF8
+    LDX $FFF9
+    JMP FF86
+
+.ORG $FFA9
+
+FFA9: ; GETCKS
+    LDY #$00
+FFAB:
+    LDA $FFD7,X
+    STA $9E,Y
+    INX
+    INY
+    CPY #$04
+    BNE FFAB
+    LDY #$00
+FFB9:
+    CLC
+    LDA ($9E),Y
+    ADC $8B
+    STA $8B
+    BCC FFC4
+    INC $8C
+FFC4:
+    INC $9E
+    BNE FFCA
+    INC $9F
+FFCA:
+    LDA $9E
+    CMP $A0
+    BNE FFB9
+    LDA $9F
+    CMP $A1
+    BNE FFB9
+    RTS
+
+.ORG $FFD7
+
+CKSTAB:
+    .WORD $C002, $D000, $5000, $5800, $D800, $E000, $E000, $FFF8, $FFFA, $0000
+
+.ORG $FFF8
+
+CHSRO2:
+    .WORD $6C8C
+
+.ORG $FFFA
+
+FFFAVectors:
+    .WORD $C018, $C2AA, $C02C
+
+; Remaining verification work is in the earlier recovered gameplay blocks.
+
+; -----------------------------------------------------------------------------
+; Original XEX data / graphics / lookup segments
+; -----------------------------------------------------------------------------
+
 .ORG $02E0
 .WORD $C290
