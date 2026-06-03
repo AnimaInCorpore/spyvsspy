@@ -43,7 +43,7 @@ Key findings:
 
 **Critical**: keep the generated XEX's normalized sector stream compatible with the original while still adding recovered support code needed for a monolithic working XEX.
 
-- Continue the title helper chain in `src/E4DF.s` and `src/E739.s`: the entry stubs are now mnemonic, but the deeper helpers/tables at `E7BE+` and `E85D+` are still mostly raw bytes.
+- `src/E4DF.s` is now linearized. Continue the remaining title helper chain work in `src/E739.s`: the deeper helpers/tables at `E7BE+` and `E85D+` are mostly recovered, with one unsupported byte still left in the span.
 - Compare normalized XEX offsets and ATR sectors after each manifest/source change, especially around `$9F50`, stage INITAD markers, and large `$2000+`/`$3ADD+` payloads.
 - Continue tracing original/source after the title screen and verify START/fire handling, menu transition, and gameplay entry.
 - If more sector-sensitive loads appear, fix segment ordering/padding first; only patch game logic if sector-compatible XEX layout cannot reasonably carry the data.

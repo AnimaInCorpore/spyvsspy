@@ -10,35 +10,245 @@ TitleHelperChain:
     BCC $E4F1
     LDY #$86
     JMP $E670
-    .BYTE $A5, $20, $C9, $7F, $D0, $15, $A5, $22, $C9, $0C, $F0, $71, $AD, $E9, $02, $D0
-    .BYTE $05, $A0, $82, $4C, $70, $E6, $20, $29, $CA, $30, $F8, $A0, $84, $A5, $22, $C9
-    .BYTE $03, $90, $25, $A8, $C0, $0E, $90, $02, $A0, $0E, $84, $17, $B9, $2A, $E7, $F0
-    .BYTE $0F, $C9, $02, $F0, $48, $C9, $08, $B0, $5F, $C9, $04, $F0, $76, $4C, $1E, $E6
-    .BYTE $A5, $20, $C9, $FF, $F0, $05, $A0, $81, $4C, $70, $E6, $AD, $E9, $02, $D0, $27
-    .BYTE $20, $FF, $E6, $B0, $22, $A9, $00, $8D, $EA, $02, $8D, $EB, $02, $20, $95, $E6
-    .BYTE $B0, $E6, $20, $EA, $E6, $A9, $0B, $85, $17, $20, $95, $E6, $A5, $2C, $85, $26
-    .BYTE $A5, $2D, $85, $27, $4C, $72, $E6, $20, $F9, $EE, $4C, $70, $E6, $A0, $01, $84
-    .BYTE $23, $20, $95, $E6, $B0, $03, $20, $EA, $E6, $A9, $FF, $85, $20, $A9, $E4, $85
-    .BYTE $27, $A9, $DB, $85, $26, $4C, $72, $E6, $A5, $20, $C9, $FF, $D0, $05, $20, $FF
-    .BYTE $E6, $B0, $A5, $20, $95, $E6, $20, $EA, $E6, $A6, $2E, $BD, $40, $03, $85, $20
-    .BYTE $4C, $72, $E6, $A5, $22, $25, $2A, $D0, $05, $A0, $83, $4C, $70, $E6, $20, $95
-    .BYTE $E6, $B0, $F8, $A5, $28, $05, $29, $D0, $08, $20, $EA, $E6, $85, $2F, $4C, $72
-    .BYTE $E6, $20, $EA, $E6, $85, $2F, $30, $41, $A0, $00, $91, $24, $20, $D1, $E6, $A5
-    .BYTE $22, $29, $02, $D0, $0C, $A5, $2F, $C9, $9B, $D0, $06, $20, $BB, $E6, $4C, $18
-    .BYTE $E6, $20, $BB, $E6, $D0, $DB, $A5, $22, $29, $02, $D0, $1D, $20, $EA, $E6, $85
-    .BYTE $00, $03, $CA, $10, $F7, $AE, $12, $03, $8E, $0A, $03, $E8, $8E, $12, $03, $AD
-    .BYTE $13, $03, $8D, $00, $03, $4C, $59, $E4, $00, $01, $26, $40, $FD, $03, $1E, $00
-    .BYTE $80, $00, $00, $00, $8C, $12, $03, $8D, $13, $03, $A9, $E9, $85, $4A, $A9, $03
-    .BYTE $85, $4B, $A0, $12, $B1, $4A, $AA, $C8, $B1, $4A, $CD, $13, $03, $D0, $07, $EC
-    .BYTE $12, $03, $D0, $02, $18, $60, $C9, $00, $D0, $06, $E0, $00, $D0, $02, $38, $60
-    .BYTE $86, $4A, $85, $4B, $20, $56, $CB, $D0, $F5, $F0, $D7, $38, $08, $B0, $28, $8D
-    .BYTE $ED, $02, $8C, $EC, $02, $08, $A9, $00, $A8, $20, $5D, $E8, $B0, $27, $A0, $12
-    .BYTE $AD, $EC, $02, $91, $4A, $AA, $C8, $AD, $ED, $02, $91, $4A, $86, $4A, $85, $4B
-    .BYTE $A9, $00, $91, $4A, $88, $91, $4A, $20, $00, $E9, $90, $0C, $AD, $ED, $02, $AC
-    .BYTE $EC, $02, $20, $15, $E9, $28, $38, $60, $28, $B0, $09, $A9, $00, $A0, $10, $91
-    .BYTE $4A, $C8, $91, $4A, $18, $A0, $10, $AD, $E7, $02, $71, $4A, $8D, $E7, $02, $C8
-    .BYTE $AD, $E8, $02, $71, $4A, $8D, $E8, $02, $A0, $0F, $A9, $00, $91, $4A, $20, $56
-    .BYTE $CB, $A0, $0F, $91, $4A, $18, $60, $18, $A5, $4A, $69, $0C, $8D, $12, $03, $A5
-    .BYTE $4B, $69, $00, $8D, $13, $03, $6C, $12, $03, $4C, $72, $C2, $20, $5D, $E8, $B0
-    .BYTE $3B, $A8, $A5, $4A, $48, $A5, $4B, $48, $86, $4A, $84, $4B, $AD, $44, $02, $D0
-    .BYTE $0F, $A0, $10, $18, $B1, $4A, $C8, $71, $4A, $D0, $1F, $20, $56, $CB, $D0, $1A
+
+E4F3:
+    LDA $20
+    CMP #$7F
+    BNE $E50E
+    LDA $22
+    CMP #$0C
+    BEQ $E570
+    LDA $02E9
+    BNE $E509
+    LDY #$82
+    JMP $E670
+    JSR $CA29
+    BMI $E506
+    LDY #$84
+    LDA $22
+    CMP #$03
+    BCC $E53B
+    TAY
+    CPY #$0E
+    BCC $E51D
+    LDY #$0E
+    STY $17
+    LDA $E72A,Y
+    BEQ $E533
+    CMP #$02
+    BEQ $E570
+    CMP #$08
+    BCS $E58B
+    CMP #$04
+    BEQ $E5A6
+    JMP $E61E
+    LDA $20
+    CMP #$FF
+    BEQ $E53E
+    LDY #$81
+    JMP $E670
+    LDA $02E9
+    BNE $E56A
+    JSR $E6FF
+    BCS $E56A
+    LDA #$00
+    STA $02EA
+    STA $02EB
+    JSR $E695
+    BCS $E53B
+    JSR $E6EA
+    LDA #$0B
+    STA $17
+    JSR $E695
+    LDA $2C
+    STA $26
+    LDA $2D
+    STA $27
+    JMP $E672
+    JSR $EEF9
+    JMP $E670
+    LDY #$01
+    STY $23
+    JSR $E695
+    BCS $E57C
+    JSR $E6EA
+    LDA #$FF
+    STA $20
+    LDA #$E4
+    STA $27
+    LDA #$DB
+    STA $26
+    JMP $E672
+    LDA $20
+    CMP #$FF
+    BNE $E596
+    JSR $E6FF
+    BCS $E53B
+    JSR $E695
+    JSR $E6EA
+    LDX $2E
+    LDA $0340,X
+    STA $20
+    JMP $E672
+    LDA $22
+    AND $2A
+    BNE $E5B1
+    LDY #$83
+    JMP $E670
+    JSR $E695
+    BCS $E5AE
+    LDA $28
+    ORA $29
+    BNE $E5C4
+    JSR $E6EA
+    STA $2F
+    JMP $E672
+    JSR $E6EA
+    STA $2F
+    BMI $E60C
+    LDY #$00
+    STA ($24),Y
+    JSR $E6D1
+    LDA $22
+    AND #$02
+    BNE $E5E4
+    LDA $2F
+    CMP #$9B
+    BNE $E5E4
+    JSR $E6BB
+    JMP $E618
+    JSR $E6BB
+    BNE $E5C4
+    LDA $22
+    AND #$02
+    BNE $E60C
+    JSR $E6EA
+    STA $00
+    SLO ($CA,X)
+    BPL $E5EF
+    LDX $0312
+    STX $030A
+    INX
+    STX $0312
+    LDA $0313
+    STA $0300
+    JMP $E459
+    BRK
+    ORA ($26,X)
+    RTI
+    SBC $1E03,X
+    BRK
+    DOP #$00
+    BRK
+    BRK
+    STY $0312
+    STA $0313
+    LDA #$E9
+    STA $4A
+    LDA #$03
+    STA $4B
+    LDY #$12
+    LDA ($4A),Y
+    TAX
+    INY
+    LDA ($4A),Y
+    CMP $0313
+    BNE $E639
+    CPX $0312
+    BNE $E639
+    CLC
+    RTS
+    CMP #$00
+    BNE $E643
+    CPX #$00
+    BNE $E643
+    SEC
+    RTS
+    STX $4A
+    STA $4B
+    JSR $CB56
+    BNE $E641
+    BEQ $E625
+    SEC
+    PHP
+    BCS $E67A
+    STA $02ED
+    STY $02EC
+    PHP
+    LDA #$00
+    TAY
+    JSR $E85D
+    BCS $E688
+    LDY #$12
+    LDA $02EC
+    STA ($4A),Y
+    TAX
+    INY
+    LDA $02ED
+    STA ($4A),Y
+    STX $4A
+    STA $4B
+    LDA #$00
+    STA ($4A),Y
+    DEY
+    STA ($4A),Y
+    JSR $E900
+    BCC $E68B
+    LDA $02ED
+    LDY $02EC
+    JSR $E915
+    PLP
+    SEC
+    RTS
+    PLP
+    BCS $E697
+    LDA #$00
+    LDY #$10
+    STA ($4A),Y
+    INY
+    STA ($4A),Y
+    CLC
+    LDY #$10
+    LDA $02E7
+    ADC ($4A),Y
+    STA $02E7
+    INY
+    LDA $02E8
+    ADC ($4A),Y
+    STA $02E8
+    LDY #$0F
+    LDA #$00
+    STA ($4A),Y
+    JSR $CB56
+    LDY #$0F
+    STA ($4A),Y
+    CLC
+    RTS
+    CLC
+    LDA $4A
+    ADC #$0C
+    STA $0312
+    LDA $4B
+    ADC #$00
+    STA $0313
+    JMP ($0312)
+    JMP $C272
+    JSR $E85D
+    BCS $E70F
+    TAY
+    LDA $4A
+    PHA
+    LDA $4B
+    PHA
+    STX $4A
+    STY $4B
+    LDA $0244
+    BNE $E6F3
+    LDY #$10
+    CLC
+    LDA ($4A),Y
+    INY
+    ADC ($4A),Y
+    BNE $E70D
+    JSR $CB56
+    BNE $E70D
