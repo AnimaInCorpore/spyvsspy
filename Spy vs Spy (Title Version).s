@@ -1,3 +1,84 @@
+.ORG $C000
+
+; Hardware interrupt dispatch table / config data ($C000-$C00B)
+C000_Data:
+    .BYTE $11, $92, $10, $05, $83, $00, $42, $42, $00, $00, $01, $02
+
+; Subroutine: enable ANTIC DMA, capture VCOUNT to $03FA
+C00C_InitDma:
+    LDA #$40
+    STA $D40E
+    LDA $D013
+    STA $03FA
+    RTS
+
+; NMI dispatcher: routes VBI vs DLI
+NMI_Handler:
+    BIT $D40F
+    BPL DLI_Handler
+    JMP ($0200)
+
+; DLI handler: save registers, clear NMIST, dispatch via $0222
+DLI_Handler:
+    CLD
+    PHA
+    TXA
+    PHA
+    TYA
+    PHA
+    STA $D40F
+    JMP ($0222)
+
+; IRQ/BRK handler: clear decimal, dispatch via OS vector $0216
+IRQ_BRK_Handler:
+    CLD
+    JMP ($0216)
+
+; IRQ handler body ($C030-$C28F)
+C030_IrqBody:
+    .BYTE $48, $AD, $0E, $D2, $29, $20, $D0, $0D, $A9, $DF, $8D, $0E, $D2, $A5, $10, $8D
+    .BYTE $0E, $D2, $6C, $0A, $02, $8A, $48, $AD, $FF, $D1, $2D, $49, $02, $F0, $03, $6C
+    .BYTE $38, $02, $A2, $06, $BD, $CF, $C0, $E0, $05, $D0, $04, $25, $10, $F0, $05, $2C
+    .BYTE $0E, $D2, $F0, $06, $CA, $10, $ED, $4C, $A0, $C0, $49, $FF, $8D, $0E, $D2, $A5
+    .BYTE $10, $8D, $0E, $D2, $E0, $00, $D0, $05, $AD, $6D, $02, $D0, $23, $BD, $D7, $C0
+    .BYTE $AA, $BD, $00, $02, $8D, $8C, $02, $BD, $01, $02, $8D, $8D, $02, $68, $AA, $6C
+    .BYTE $8C, $02, $A9, $00, $85, $11, $8D, $FF, $02, $8D, $F0, $02, $85, $4D, $68, $40
+    .BYTE $68, $AA, $2C, $02, $D3, $10, $06, $AD, $00, $D3, $6C, $02, $02, $2C, $03, $D3
+    .BYTE $10, $06, $AD, $01, $D3, $6C, $04, $02, $68, $8D, $8C, $02, $68, $48, $29, $10
+    .BYTE $F0, $07, $AD, $8C, $02, $48, $6C, $06, $02, $AD, $8C, $02, $48, $68, $40, $80
+    .BYTE $40, $04, $02, $01, $08, $10, $20, $36, $08, $14, $12, $10, $0E, $0C, $0A, $4C
+    .BYTE $DF, $C0, $E6, $14, $D0, $08, $E6, $4D, $E6, $13, $D0, $02, $E6, $12, $A9, $FE
+    .BYTE $A2, $00, $A4, $4D, $10, $06, $85, $4D, $A6, $13, $A9, $F6, $85, $4E, $86, $4F
+    .BYTE $AD, $C5, $02, $45, $4F, $25, $4E, $8D, $17, $D0, $A2, $00, $20, $55, $C2, $D0
+    .BYTE $03, $20, $4F, $C2, $A5, $42, $D0, $08, $BA, $BD, $04, $01, $29, $04, $F0, $03
+    .BYTE $4C, $8A, $C2, $AD, $13, $D0, $CD, $FA, $03, $D0, $B4, $AD, $0D, $D4, $8D, $35
+    .BYTE $02, $AD, $0C, $D4, $8D, $34, $02, $AD, $31, $02, $8D, $03, $D4, $AD, $30, $02
+    .BYTE $8D, $02, $D4, $AD, $2F, $02, $8D, $00, $D4, $AD, $6F, $02, $8D, $1B, $D0, $AD
+    .BYTE $6C, $02, $F0, $0E, $CE, $6C, $02, $A9, $08, $38, $ED, $6C, $02, $29, $07, $8D
+    .BYTE $05, $D4, $A2, $08, $8E, $1F, $D0, $58, $BD, $C0, $02, $45, $4F, $25, $4E, $9D
+    .BYTE $12, $D0, $CA, $10, $F2, $AD, $F4, $02, $8D, $09, $D4, $AD, $F3, $02, $8D, $01
+    .BYTE $D4, $A2, $02, $20, $55, $C2, $D0, $03, $20, $52, $C2, $A2, $02, $E8, $E8, $BD
+    .BYTE $18, $02, $1D, $19, $02, $F0, $06, $20, $55, $C2, $9D, $26, $02, $E0, $08, $D0
+    .BYTE $EC, $AD, $0F, $D2, $29, $04, $F0, $08, $AD, $F1, $02, $F0, $03, $CE, $F1, $02
+    .BYTE $AD, $2B, $02, $F0, $3E, $AD, $0F, $D2, $29, $04, $D0, $32, $CE, $2B, $02, $D0
+    .BYTE $32, $AD, $6D, $02, $D0, $2D, $AD, $DA, $02, $8D, $2B, $02, $AD, $09, $D2, $C9
+    .BYTE $9F, $F0, $20, $C9, $83, $F0, $1C, $C9, $84, $F0, $18, $C9, $94, $F0, $14, $29
+    .BYTE $3F, $C9, $11, $F0, $0E, $AD, $09, $D2, $8D, $FC, $02, $4C, $F3, $C1, $A9, $00
+    .BYTE $8D, $2B, $02, $AD, $00, $D3, $4A, $4A, $4A, $4A, $8D, $79, $02, $8D, $7B, $02
+    .BYTE $AD, $00, $D3, $29, $0F, $8D, $78, $02, $8D, $7A, $02, $AD, $10, $D0, $8D, $84
+    .BYTE $02, $8D, $86, $02, $AD, $11, $D0, $8D, $85, $02, $8D, $87, $02, $A2, $03, $BD
+    .BYTE $00, $D2, $9D, $70, $02, $9D, $74, $02, $CA, $10, $F4, $8D, $0B, $D2, $A2, $02
+    .BYTE $A0, $01, $B9, $78, $02, $4A, $4A, $4A, $9D, $7D, $02, $9D, $81, $02, $A9, $00
+    .BYTE $2A, $9D, $7C, $02, $9D, $80, $02, $CA, $CA, $88, $10, $E6, $6C, $24, $02, $6C
+    .BYTE $26, $02, $6C, $28, $02, $BC, $18, $02, $D0, $08, $BC, $19, $02, $F0, $10, $DE
+    .BYTE $19, $02, $DE, $18, $02, $D0, $08, $BC, $19, $02, $D0, $03, $A9, $00, $60, $A9
+    .BYTE $FF, $60, $0A, $8D, $2D, $02, $8A, $A2, $05, $8D, $0A, $D4, $CA, $D0, $FD, $AE
+    .BYTE $2D, $02, $9D, $17, $02, $98, $9D, $16, $02, $60, $68, $A8, $68, $AA, $68, $40
+
+; -----------------------------------------------------------------------------
+; Upper-bank bootstrap stub and overflow area
+; -----------------------------------------------------------------------------
+
 ; Spy vs Spy (Title Version)
 ; Partial mnemonic-first disassembly scaffold.
 ; Recovered bootstrap/runtime fragments are represented as code;
@@ -5411,8 +5492,6 @@ XEX_2000_266:
     .BYTE $02, $91, $00, $88, $10, $F9, $18, $A9, $80, $65, $00, $85, $00, $90, $02, $E6
     .BYTE $01, $18, $A9, $80, $65, $02, $85, $02, $90, $02, $E6, $03, $60
 
-.ORG $02E2
-.WORD $2000
 .ORG $34A6
 
 XEX_34A6_267:
@@ -5639,15 +5718,80 @@ XEX_3ADD_286:
     .BYTE $20, $E8, $86, $0F, $A6, $13, $CA, $30, $03, $4C, $61, $83, $A5, $0F, $AC, $5C
     .BYTE $57, $91, $20, $AA, $CA, $30, $0A, $BC, $66, $57, $B1, $20, $F0, $08, $CA, $10
     .BYTE $F6, $A6, $0E, $4C, $56, $83, $A6, $0E, $E8, $E4, $11, $B0, $03, $4C, $56, $83
-    .BYTE $A0, $04, $A9, $FF, $99, $30, $03, $88, $10, $FA, $A9, $00, $85, $14, $A2, $00
-    .BYTE $86, $0E, $A0, $04, $A5, $0E, $D9, $30, $03, $F0, $3C, $88, $10, $F8, $20, $F9
-    .BYTE $28, $AC, $5C, $57, $B1, $20, $AA, $CA, $30, $2D, $BC, $5D, $57, $B1, $20, $C9
-    .BYTE $FF, $F0, $21, $BC, $66, $57, $B1, $20, $D0, $1A, $20, $E0, $2E, $29, $1F, $CD
-    .BYTE $61, $03, $B0, $10, $A4, $14, $A5, $0E, $99, $30, $03, $8A, $99, $35, $03, $E6
-    .BYTE $14, $4C, $7E, $84, $CA, $10, $D3, $A5, $14, $C9, $05, $B0, $0A, $A6, $0E, $E8
-    .BYTE $E4, $11, $90, $AC, $4C, $27, $84, $AD, $52, $03, $D0, $0D, $AC, $63, $03, $20
-    .BYTE $04, $29, $AC, $6F, $57, $A9, $FF, $91, $20, $AD, $9D, $B6, $10, $05, $A2, $04
-    .BYTE $20, $C2, $29, $60, $02, $01, $FF, $FF, $FF, $FF, $00, $03, $FF, $FF, $FF, $FF
+; -----------------------------------------------------------------------------
+; Table scan / slot fill routine
+; -----------------------------------------------------------------------------
+XEX_3D5D_289:
+    LDY #$04
+    LDA #$FF
+    STA $0330,Y
+    DEY
+    BPL XEX_3D5D_289
+    LDA #$00
+    STA $14
+    LDX #$00
+XEX_3D6D_289:
+    STX $0E
+    LDY #$04
+XEX_3D71_289:
+    LDA $0E
+    CMP $0330,Y
+    BEQ XEX_3DB4_289
+    DEY
+    BPL XEX_3D71_289
+    JSR $28F9
+    LDY $575C
+    LDA ($20),Y
+    TAX
+    DEX
+XEX_3D87_289:
+    BMI XEX_3DB4_289
+    LDY $575D,X
+    LDA ($20),Y
+    CMP #$FF
+    BEQ XEX_3DB1_289
+    LDY $5766,X
+    LDA ($20),Y
+    BNE XEX_3DB1_289
+    JSR $2EE0
+    AND #$1F
+    CMP $0361
+    BCS XEX_3DB1_289
+    LDY $14
+    LDA $0E
+    STA $0330,Y
+    TXA
+    STA $0335,Y
+    INC $14
+    JMP $847E
+XEX_3DB1_289:
+    DEX
+    BPL XEX_3D87_289
+XEX_3DB4_289:
+    LDA $14
+    CMP #$05
+    BCS XEX_3DC4_289
+    LDX $0E
+    INX
+    CPX $11
+    BCC XEX_3D6D_289
+    JMP $8427
+XEX_3DC4_289:
+    LDA $0352
+    BNE XEX_3DD6_289
+    LDY $0363
+    JSR $2904
+    LDY $576F
+    LDA #$FF
+    STA ($20),Y
+XEX_3DD6_289:
+    LDA $B69D
+    BPL XEX_3DE0_289
+    LDX #$04
+    JSR $29C2
+XEX_3DE0_289:
+    RTS
+    .BYTE $02, $01, $FF, $FF, $FF, $FF, $00, $03, $FF, $FF, $FF, $FF
     .BYTE $04, $00, $FF, $FF, $FF, $FF, $01, $17, $14, $19, $FF, $FF, $09, $02, $05, $0C
     .BYTE $FF, $FF, $06, $FF, $FF, $04, $FF, $FF, $07, $05, $FF, $FF, $FF, $FF, $FF, $06
     .BYTE $FF, $FF, $0D, $FF, $FF, $FF, $FF, $0A, $FF, $FF, $FF, $04, $FF, $FF, $10, $FF
@@ -7482,8 +7626,6 @@ XEX_B900_354:
 ; Recovered runtime entry stubs
 ; -----------------------------------------------------------------------------
 
-.ORG $02E2
-.WORD $B900
 .ORG $E40C
 
 TopBankDispatch:
@@ -7595,4 +7737,4 @@ TitleHelperChain:
     .BYTE $3B, $A8, $A5, $4A, $48, $A5, $4B, $48, $86, $4A, $84, $4B, $AD, $44, $02, $D0
     .BYTE $0F, $A0, $10, $18, $B1, $4A, $C8, $71, $4A, $D0, $1F, $20, $56, $CB, $D0, $1A
 .ORG $02E0
-.WORD $B900
+.WORD $C290

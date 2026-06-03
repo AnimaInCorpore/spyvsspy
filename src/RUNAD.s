@@ -1,2 +1,2 @@
 .ORG $02E0
-.WORD $B900
+.WORD $C290
