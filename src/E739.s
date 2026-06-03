@@ -73,6 +73,7 @@ E777:
     SRE $4001
     RTI
     NOP
+    ; 0x02 is still an unsupported single-byte opcode here.
     .BYTE $02
     ASL $0400,X
     BRK
