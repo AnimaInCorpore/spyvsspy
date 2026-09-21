@@ -14,6 +14,11 @@ XEX_0244_001:
 XEX_022F_002:
     .BYTE $00
 
+.ORG $D400
+
+XEX_D400_003:
+    .BYTE $00
+
 .ORG $7F00
 
 XEX_7F00_003:
@@ -4192,10 +4197,10 @@ E777:
     PLA
     STA $030A
     JMP $E459
+    ; $E7D4-$E7DD is copied into $0300-$0309; the $02 byte there is data.
     SRE $4001
     RTI
     NOP
-    ; 0x02 is still an unsupported single-byte opcode here.
     .BYTE $02
     ASL $0400,X
     BRK
@@ -4240,6 +4245,7 @@ E777:
     STA $0300,X
     DEX
     BPL $E833
+    ; $E851-$E85C is copied into $0300-$030B by the alternate title path.
     LDX $0312
     STX $030A
     INX
@@ -4247,14 +4253,8 @@ E777:
     LDA $0313
     STA $0300
     JMP $E459
-    BRK
-    ORA ($26,X)
-    RTI
-    SBC $1E03,X
-    BRK
-    DOP #$00
-    BRK
-    BRK
+    ; $E603-$E60E is an inline data blob skipped by the jump above.
+    .BYTE $00, $01, $26, $40, $FD, $03, $1E, $00, $80, $00, $00, $00
     STY $0312
     STA $0313
     LDA #$E9
@@ -5673,7 +5673,8 @@ EB6D:
     SBC $35
     BCC $EB55
     LDA $3C
-    BEQ $EB81
+EB79:
+    BEQ $EB79
     LDA #$00
     STA $3C
     BEQ $EB51
@@ -5681,7 +5682,6 @@ EB81:
     LDA #$FF
     STA $38
     BNE $EB55
-
 .ORG $ECAF
 
 LowerBankSetupHelper:

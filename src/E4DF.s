@@ -133,14 +133,8 @@ E4F3:
     LDA $0313
     STA $0300
     JMP $E459
-    BRK
-    ORA ($26,X)
-    RTI
-    SBC $1E03,X
-    BRK
-    DOP #$00
-    BRK
-    BRK
+    ; $E603-$E60E is an inline data blob skipped by the jump above.
+    .BYTE $00, $01, $26, $40, $FD, $03, $1E, $00, $80, $00, $00, $00
     STY $0312
     STA $0313
     LDA #$E9

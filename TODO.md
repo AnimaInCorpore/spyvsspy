@@ -18,6 +18,11 @@ Goal: produce a single-file disassembled source that assembles to a XEX which si
 - [ ] **Verify post-title behavior**: the source now reaches the title screen (`SDLIST=$7F2E`, `VDSLST=$9F50`) and no longer crashes to `$3D5F`/`$C02D`. Runtime traces show the title/menu code path (`$E739/$E7CE/$E98D`) matches the original, but the title counter/state (`$030A/$023C`) can drift by a few frames under real-time sampling. The next useful target is the early boot/loader phase rather than the hot title routine itself.
 - [ ] Finalize disassembly of the `$E9B8-$FE8C` OS/SIO/runtime chain and the `C02C/C2AA` vector-handling path only where it is genuinely part of the loaded program behavior; much of this range is OS ROM behavior observed during XEX loading.
 - [ ] Treat adjacent bytes as code only when execution traces confirm it; this binary mixes routines, tables, strings, and vector data, so blind linear disassembly is not sufficient.
+- [x] Reconciled the `$E98D` tail around `$EB79-$EB8E`: the branch is a self-loop while `$3C` is zero, and the source labels now match the emitted bytes.
+- [x] Restored the standalone `$D400` byte in the early loader stream so the assembled XEX once again matches the original segment order through `$022F/$D400/$7F00`.
+- [x] Recovered the `C629-$C73A` menu-helper cluster into `src/C5C9.s`, keeping the fragment set aligned with the monolithic source and preserving the `MenuFinalize`/`MenuCheck*`/`MenuModeOne*` block.
+- [x] Marked the `$E603-$E60E` inline blob in the `E4DF` tail as data; it is skipped by the `JMP $E459` tail and should not be read as a live instruction stream.
+- [x] Split the `src/E739.s` title-helper spine into explicit entry points (`$E7BE/$E7DE/$E7F6/$E85D/$E87D/$E887/$E889/$E894/$E89E/$E8BE/$E8D1/$E8DD/$E900/$E915`) while keeping the copied title stubs at `$E7D4-$E7DD` and `$E851-$E85C` documented as data.
 
 ## Root Cause and Current Strategy (2026-06-03)
 
@@ -43,7 +48,8 @@ Key findings:
 
 **Critical**: keep the generated XEX's normalized sector stream compatible with the original while still adding recovered support code needed for a monolithic working XEX.
 
-- `src/E4DF.s` is now linearized. Continue the remaining title helper chain work in `src/E739.s`: the deeper helpers/tables at `E7BE+` and `E85D+` are mostly recovered, and the only unresolved byte in the span is the standalone `$02` after `NOP` in the tail island.
+- `src/E4DF.s` is now linearized. The `src/E739.s` title-helper chain now has explicit entry labels for the recovered spine; the copied title stubs at `$E7D4-$E7DD` and `$E851-$E85C` remain documented as data, and any remaining work in this span is the post-$E900 tail/exit path rather than the copied bytes themselves.
+- `src/C5C9.s` now includes the `MenuFinalize` through `MenuModeOnePtr` helper block (`$C629-$C73A` in runtime terms); the remaining runtime-chain work, if any, is in the later tail rather than this menu-copy path.
 - Compare normalized XEX offsets and ATR sectors after each manifest/source change, especially around `$9F50`, stage INITAD markers, and large `$2000+`/`$3ADD+` payloads.
 - Continue tracing original/source after the title screen and verify START/fire handling, menu transition, and gameplay entry.
 - If more sector-sensitive loads appear, fix segment ordering/padding first; only patch game logic if sector-compatible XEX layout cannot reasonably carry the data.
@@ -51,7 +57,7 @@ Key findings:
 
 ## Verification
 - Re-run the game in jsA8E after each major chunk is recovered.
-- Latest state (2026-06-03): source assembles to 48,220 bytes and reaches the title screen. `node scripts/diag-source-vs-original.js` confirms matching `$9F50` bytes and `SDLIST=$7F2E`/`VDSLST=$9F50`. `node scripts/compare-state.js` confirms source/original both reach the title display state by ~3s. `node scripts/diag-spyvsspy2.js` captures a correct title screenshot. Current runtime tracing shows the title-loop code matches the original, and the remaining discrepancy is a small timing/phase skew in `$030A/$023C`, so the next investigation should focus on the boot/loader phase rather than the menu routine itself.
+- Latest state (2026-06-03): source assembles to 48,211 bytes and reaches the title screen. `node scripts/diag-source-vs-original.js` confirms matching `$9F50` bytes and `SDLIST=$7F2E`/`VDSLST=$9F50`. `node scripts/compare-state.js` confirms source/original both reach the title display state by ~3s. `node scripts/diag-spyvsspy2.js` captures a correct title screenshot. Current runtime tracing shows the title-loop code matches the original, and the remaining discrepancy is a small timing/phase skew in `$030A/$023C`, so the next investigation should focus on the boot/loader phase rather than the menu routine itself.
 
 ## Workspace Hygiene
 - `playground/` is the scratch area for screenshots, hex dumps, and snapshot blobs.

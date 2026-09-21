@@ -60,6 +60,7 @@ E777:
     JSR $E89E
     BCS $E797
     BCC $E76C
+E7BE:
     PHA
     LDX #$09
     LDA $E7D4,X
@@ -70,13 +71,14 @@ E777:
     PLA
     STA $030A
     JMP $E459
+    ; $E7D4-$E7DD is copied into $0300-$0309; the $02 byte there is data.
     SRE $4001
     RTI
     NOP
-    ; 0x02 is still an unsupported single-byte opcode here.
     .BYTE $02
     ASL $0400,X
     BRK
+E7DE:
     STA $0313
     LDX #$00
     STX $0312
@@ -88,6 +90,7 @@ E777:
     INC $02EC
     BNE $E7F6
     INC $02ED
+E7F6:
     LDA $02EC
     STA $02D1
     LDA $02ED
@@ -105,19 +108,24 @@ E777:
     BEQ $E825
     LDX $0315
     LDA $037D,X
+E825:
     CLC
     RTS
+E827:
     LDA #$80
     STA $0315
     JSR $E833
     BPL $E81D
     SEC
     RTS
+E833:
     LDX #$0B
     LDA $E851,X
     STA $0300,X
     DEX
     BPL $E833
+    ; $E851-$E85C is copied into $0300-$030B by the alternate title path.
+E85D:
     LDX $0312
     STX $030A
     INX
@@ -133,6 +141,7 @@ E777:
     DOP #$00
     BRK
     BRK
+E87D:
     STY $0312
     STA $0313
     LDA #$E9
@@ -154,18 +163,22 @@ E777:
     BNE $E887
     CPX #$00
     BNE $E887
+E887:
     SEC
     RTS
+E889:
     STX $4A
     STA $4B
     JSR $CB56
     BNE $E885
     BEQ $E869
+E894:
     SEC
     PHP
     BCS $E8BE
     STA $02ED
     STY $02EC
+E89E:
     PHP
     LDA #$00
     TAY
@@ -183,12 +196,14 @@ E777:
     LDA #$00
     STA ($4A),Y
     DEY
+E8BE:
     STA ($4A),Y
     JSR $E900
     BCC $E8CF
     LDA $02ED
     LDY $02EC
     JSR $E915
+E8D1:
     PLP
     SEC
     RTS
@@ -214,8 +229,10 @@ E777:
     JSR $CB56
     LDY #$0F
     STA ($4A),Y
+E8DD:
     CLC
     RTS
+E900:
     CLC
     LDA $4A
     ADC #$0C
@@ -225,6 +242,7 @@ E777:
     STA $0313
     JMP ($0312)
     JMP $C272
+E915:
     JSR $E85D
     BCS $E953
     TAY

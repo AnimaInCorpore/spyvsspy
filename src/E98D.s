@@ -275,7 +275,8 @@ EB6D:
     SBC $35
     BCC $EB55
     LDA $3C
-    BEQ $EB81
+EB79:
+    BEQ $EB79
     LDA #$00
     STA $3C
     BEQ $EB51
@@ -283,4 +284,3 @@ EB81:
     LDA #$FF
     STA $38
     BNE $EB55
-
